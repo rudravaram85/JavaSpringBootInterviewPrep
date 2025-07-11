@@ -368,4 +368,392 @@ public class DynamicDemo {
 
 ---
 
-That's the complete set. Let me know if you'd like code for quizzes or deeper dive into any area! 😊
+Below are detailed explanations with real-world coding examples, bullet-point highlights, concise 5‑line summaries, sample code, followed by 3 interview-style Q\&As for each topic.
+
+---
+
+## 🔧 Installation of Maven
+
+**Use‑case & Highlights**
+
+* Enables dependency management and build lifecycle automation.
+* Integrates with CI/CD tools like Jenkins or GitHub Actions.
+* Standardizes project structure across the organization.
+* Supports transitive dependencies and plugins (Surefire, Shade).
+* Facilitates multi-module project builds.
+
+**Summary**
+Maven streamlines Java project builds using a declarative `pom.xml`. It handles downloading dependencies, compilation, testing, packaging, and deployment phases automatically. With its conventions, teams minimize configuration and maximize consistency. It also supports plugin-rich extensions for reporting, docs, and deployments. Maven is a staple in enterprise and open‑source Java projects.
+
+```bash
+# On Debian/Ubuntu:
+sudo apt update
+sudo apt install maven
+
+# Verify:
+mvn -v
+```
+
+**Interview Q\&A**
+
+1. **Q**: What are Maven lifecycle phases?
+   **A**: Default phases include `validate`, `compile`, `test`, `package`, `verify`, `install`, `deploy`.
+
+2. **Q**: What's the difference between `install` and `deploy`?
+   **A**: `install` puts the artifact in your local repo; `deploy` pushes it to a remote, shared repo.
+
+3. **Q**: How do you skip tests during build?
+   **A**: Use `-DskipTests` or `-Dmaven.test.skip=true`.
+
+---
+
+## 🧠 IntelliJ IDEA Ultimate
+
+**Use‑case & Highlights**
+
+* Full stack support for Spring Boot, JPA, REST APIs.
+* Built-in UI for running/debugging maven/gradle projects.
+* Smart refactoring, code inspection, and database tools.
+* Includes profiling, API testing, and Docker integration.
+* Supports advanced frameworks (Micronaut, Quarkus, Jakarta EE).
+
+**Summary**
+IntelliJ IDEA Ultimate is a premium IDE tailored for enterprise Java development. It offers deep integration with frameworks, container tools, and databases. Intelligent code analysis and fast refactoring support large codebases efficiently. GUI tools simplify version control, SQL editing, and live debugging. It's a favorite among developers building sophisticated applications.
+
+```bash
+# Download installer from JetBrains website, run:
+chmod +x ideaIU-2025.1.sh
+./ideaIU-2025.1.sh
+
+# Open and select "Import Maven Project" to get started.
+```
+
+**Interview Q\&A**
+
+1. **Q**: What is the difference between Community and Ultimate?
+   **A**: Ultimate supports enterprise frameworks (Spring, JPA, REST, DB tools); Community focuses on core Java and Kotlin.
+
+2. **Q**: Can IntelliJ import Gradle projects too?
+   **A**: Yes—direct support for both Maven and Gradle with synchronized project automation.
+
+3. **Q**: How to use live templates?
+   **A**: Via `Preferences → Editor → Live Templates`; type abbreviations like `psvm` to generate code.
+
+---
+
+## 📂 Creating Maven Project
+
+**Use‑case & Highlights**
+
+* Bootstraps standardized directory layout using `archetype`.
+* Auto-generates `pom.xml` with default settings.
+* Integrates seamlessly with IDEs like IntelliJ/Eclipse.
+* Sets groupId, artifactId, version upfront.
+* Enables multi-module structure with ease.
+
+**Summary**
+Creating a Maven project via `archetype:generate` provides a templated skeleton with `src/main/java`, `src/test/java`, and `pom.xml`. It preconfigures dependencies, packaging, and plugins. IDEs recognize the structure immediately. Ensures team-wide project consistency. Lays foundation for fast development and CI integration.
+
+```bash
+mvn archetype:generate \
+  -DgroupId=com.example \
+  -DartifactId=demo-app \
+  -DarchetypeArtifactId=maven-archetype-quickstart \
+  -DinteractiveMode=false
+cd demo-app
+mvn clean package
+```
+
+**Interview Q\&A**
+
+1. **Q**: How to change default JDK version?
+   **A**: Update `<maven.compiler.source>` and `<maven.compiler.target>` in `pom.xml`.
+
+2. **Q**: What’s an archetype?
+   **A**: A project template structure for quick start.
+
+3. **Q**: How to convert it to multi-module later?
+   **A**: Create parent POM packaging, add `<modules>` entries, and move child projects into subfolders.
+
+---
+
+## 🛠️ Creating Beans using @Bean Annotation
+
+**Use‑case & Highlights**
+
+* Defines beans via Java methods instead of XML.
+* Supports returning 3rd-party or custom class instances.
+* Enables method-level customization (init, destroy).
+* Supports conditional bean creation with `@Conditional`.
+* Facilitates reusability and testability.
+
+**Summary**
+`@Bean` annotates methods inside `@Configuration` classes to define beans explicitly. It’s ideal for 3rd-party classes or when a specific initialization is needed. Beans support lifecycle callbacks and can accept dependencies via method parameters. It's type-safe, refactor-friendly and aligns with Java configuration philosophy over XML.
+
+```java
+@Configuration
+public class AppConfig {
+  @Bean
+  public DateTimeFormatter dtf() {
+    return DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+  }
+}
+
+public class Demo {
+  public static void main(String[] args) {
+    var ctx = new AnnotationConfigApplicationContext(AppConfig.class);
+    var dtf = ctx.getBean(DateTimeFormatter.class);
+    System.out.println(dtf.format(LocalDateTime.now()));
+  }
+}
+```
+
+**Interview Q\&A**
+
+1. **Q**: What’s the difference between `@Bean` and `@Component`?
+   **A**: `@Bean` is used in Java config; `@Component` is for classpath scanning with default constructor.
+
+2. **Q**: How to define destroy method?
+   **A**: Use `@Bean(initMethod="init", destroyMethod="cleanup")`.
+
+3. **Q**: Can `@Bean` method take parameters?
+   **A**: Yes—Spring injects other beans by matching parameter types.
+
+---
+
+## 🤖 Say Hello to your new AI Coding Companion
+
+**Use‑case & Highlights**
+
+* Bootstraps a CLI or REST command to chat with an AI agent.
+* Integrates with GPT via HTTP client as a Spring bean.
+* Enhances developer workflow with code suggestions.
+* Uses DI to inject AI service in controllers or services.
+* Supports dynamic prompt configuration via SpEL or `@Value`.
+
+**Summary**
+This topic inspires building a simple AI-powered messaging service in Spring. It shows injecting a GPT client bean and exposing a `/chat` REST API endpoint. It demonstrates DI, HTTP calls, and incorporating dynamic service configuration. A practical example of leveraging Spring to wrap an external AI. Great intro to microservice integration.
+
+```java
+@Configuration
+class AiConfig {
+  @Bean public OpenAiClient aiClient() {
+    return new OpenAiClient("YOUR_API_KEY");
+  }
+}
+
+@RestController
+class ChatController {
+  private final OpenAiClient ai;
+  @Autowired ChatController(OpenAiClient ai) { this.ai = ai; }
+
+  @PostMapping("/chat")
+  public String chat(@RequestBody String msg) {
+    return ai.send(msg);
+  }
+}
+```
+
+**Interview Q\&A**
+
+1. **Q**: How to secure the API key?
+   **A**: Use Spring Boot’s `@Value("${openai.key}")` pulling from environment variables or Vault.
+
+2. **Q**: How to test ChatController?
+   **A**: Use `@WebMvcTest` with MockBean for `OpenAiClient`, mock its `send()`.
+
+3. **Q**: How to add retry logic on failures?
+   **A**: Integrate `spring-retry` or Resilience4j with `@Retryable`.
+
+---
+
+## 🧩 Understanding NoUniqueBeanDefinitionException in Spring
+
+**Use‑case & Highlights**
+
+* Thrown when multiple bean candidates match a required type.
+* Occurs with `@Autowired` by type without qualifiers.
+* Indicates ambiguous wiring in DI context.
+* Fixable by `@Qualifier` or `@Primary`.
+* Helps prevent runtime mis-wiring errors.
+
+**Summary**
+`NoUniqueBeanDefinitionException` is thrown when DI attempts to inject a type but finds more than one matching bean. It alerts developers to ambiguity in bean configuration. The solution is to mark one bean as `@Primary` or use `@Qualifier` to specify which bean to inject. It's critical for avoiding unexpected runtime behavior in complex contexts with multiple implementations.
+
+```java
+@Component class A1 implements Service {}
+@Component class A2 implements Service {}
+
+@Component class UseSvc {
+  @Autowired @Qualifier("a2") Service svc;
+}
+```
+
+**Interview Q\&A**
+
+1. **Q**: How to fix this exception automatically?
+   **A**: Use `@Primary` on the default bean implementation.
+
+2. **Q**: Can you specify qualifier at injection point?
+   **A**: Yes: `@Qualifier("beanName")`.
+
+3. **Q**: What if using constructor injection?
+   **A**: Qualifier goes on constructor parameter: `public C(@Qualifier("x") Service s)`.
+
+---
+
+## 📝 Providing a custom name to the bean
+
+**Use‑case & Highlights**
+
+* Names beans explicitly via `@Component("myBean")` or `@Bean("myBean")`.
+* Helps when multiple beans of same type exist.
+* Makes XML references and `@Qualifier` simpler.
+* Aids readability and maintainability.
+* Supports legacy integration with specific bean IDs.
+
+**Summary**
+Custom bean naming gives explicit control over Spring-managed instance identification. By default, bean name is derived from class or method. Specifying names is essential when multiple implementations of an interface exist. Named beans support clearer wiring and reduce ambiguity. This practice aids debugging in larger applications.
+
+```java
+@Component("fastSvc")
+public class FastService implements TaskService {}
+
+@Component("slowSvc")
+public class SlowService implements TaskService {}
+```
+
+**Interview Q\&A**
+
+1. **Q**: What is default bean name for `@Component`?
+   **A**: The uncapitalized class name, e.g., `fastService`.
+
+2. **Q**: Can you assign multiple names?
+   **A**: Yes: `@Component({"bean1","aliasBean"})`.
+
+3. **Q**: How to inject named bean?
+   **A**: Use `@Qualifier("beanName")` along with `@Autowired`.
+
+---
+
+## ⭐ Understanding @Primary Annotation in Spring
+
+**Use‑case & Highlights**
+
+* Marks a bean as default when duplicates exist.
+* Eliminates need for `@Qualifier` in many cases.
+* Useful in library-provided fallback beans.
+* Works with `@Configuration` and `@Component`.
+* Can be overridden with explicit qualifiers.
+
+**Summary**
+`@Primary` marks a bean as preferred when multiple beans of the same type are candidates. This solves `NoUniqueBeanDefinitionException` without qualifiers. Though convenient, qualifiers should still be used when explicit control is desired. `@Primary` provides safe fallback for most injection scenarios and helps reduce boilerplate.
+
+```java
+@Component
+@Primary
+public class DefaultSvc implements TaskService {}
+
+@Component
+public class SpecialSvc implements TaskService {}
+```
+
+**Interview Q\&A**
+
+1. **Q**: Which wins: `@Primary` or `@Qualifier`?
+   **A**: `@Qualifier` always overrides `@Primary`.
+
+2. **Q**: Can you combine them?
+   **A**: Yes—primary on one, qualifier to narrow down in edge cases.
+
+3. **Q**: Scope usage?
+   **A**: Scoping unaffected—`@Primary` only concerns selection priority.
+
+---
+
+## 🏷️ Creating Beans using @Component Annotation
+
+**Use‑case & Highlights**
+
+* Auto-detected by classpath scanning.
+* Frees you from manual `@Bean` definition.
+* Stereotypes: `@Service`, `@Repository`, `@Controller`.
+* Supports default bean naming.
+* Encourages modular, decoupled design.
+
+**Summary**
+`@Component` and its stereotypes allow Spring to auto-detect and register beans during component scanning. This convention-driven approach reduces annotation clutter and promotes clear intent. Developers annotate classes once and dependencies are injected automatically. Fully supports lifecycle management, AOP, and custom naming. Widely used in modern Spring applications.
+
+```java
+@Component
+public class GreetingService {
+  public String greet() { return "Hi!"; }
+}
+
+@Component
+public class GreetRunner implements CommandLineRunner {
+  @Autowired private GreetingService svc;
+  @Override public void run(String... args) { System.out.println(svc.greet()); }
+}
+```
+
+**Interview Q\&A**
+
+1. **Q**: What's the scan path?
+   **A**: Defined via `@ComponentScan(basePackages="com.example")` or by default root package.
+
+2. **Q**: Can you exclude components?
+   **A**: Yes—use `excludeFilters` in `@ComponentScan`, or `@Profile`.
+
+3. **Q**: What stereotype for DAOs?
+   **A**: Use `@Repository`, which also translates DB exceptions.
+
+---
+
+## 📚 Stereotype Annotations in Spring
+
+**Use‑case & Highlights**
+
+* Classifies roles: `@Controller`, `@Service`, `@Repository`, `@Component`.
+* Adds role-specific behavior (e.g. exception translation).
+* Improves readability/maintenance.
+* Enables automatic scanning and AOP application.
+* Semantic clarity in architecture.
+
+**Summary**
+Spring’s stereotype annotations provide semantic meaning and enable classpath scanning and AOP features. `@Controller` marks web controllers, `@Service` for business logic, `@Repository` for DAO with exception translation, and `@Component` for generic. These annotations help clearly define responsibilities and allow the container to apply appropriate processing.
+
+```java
+@Repository
+public class UserRepo {
+  public User find(String id) { /* JDBC or JPA logic */ }
+}
+
+@Service
+public class UserService {
+  @Autowired private UserRepo repo;
+  public User getUser(String id) { return repo.find(id); }
+}
+
+@Controller
+public class UserController {
+  @Autowired private UserService svc;
+  @GetMapping("/user")
+  public User get(@RequestParam String id) { return svc.getUser(id); }
+}
+```
+
+**Interview Q\&A**
+
+1. **Q**: How is `@Repository` special?
+   **A**: It triggers Spring’s exception translation for persistence errors.
+
+2. **Q**: What AOP proxies controllers?
+   **A**: Spring MVC uses `@Controller` to map HTTP handlers; proxies not applied by default.
+
+3. **Q**: Can service layer have transaction management?
+   **A**: Yes—use `@Service` + `@Transactional` to demarcate business transactions.
+
+---
+
+Let me know if you'd like me to add or refine any topic! 😊
