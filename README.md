@@ -1083,6 +1083,87 @@ Use `@EnableWebSecurity` and configure with `HttpSecurity`.
      *Answer: b.*
 
 ---
+The `@Autowired` annotation in Spring can be used to **inject dependencies** into:
+
+1. **Fields**
+2. **Constructors**
+3. **Setter methods**
+4. **Configuration methods (any method with parameters)**
+
+### So, to answer your question:
+
+There is **no hard limit** on the number of `@Autowired` injections you can have in a Spring application. You can inject as many dependencies as needed, in multiple places throughout your application.
+
+However, here’s a breakdown:
+
+---
+
+### 1. **Field Injection**
+
+```java
+@Autowired
+private MyService myService;
+
+@Autowired
+private AnotherService anotherService;
+```
+
+✅ You can inject multiple fields this way.
+
+---
+
+### 2. **Constructor Injection**
+
+```java
+@Autowired
+public MyComponent(MyService myService, AnotherService anotherService) {
+    this.myService = myService;
+    this.anotherService = anotherService;
+}
+```
+
+✅ Inject multiple dependencies via constructor (recommended for mandatory dependencies).
+
+---
+
+### 3. **Setter Injection**
+
+```java
+@Autowired
+public void setMyService(MyService myService) {
+    this.myService = myService;
+}
+
+@Autowired
+public void setAnotherService(AnotherService anotherService) {
+    this.anotherService = anotherService;
+}
+```
+
+✅ Multiple setters can be autowired.
+
+---
+
+### 4. **Method Injection**
+
+```java
+@Autowired
+public void configure(MyService myService, AnotherService anotherService) {
+    // Use services
+}
+```
+
+✅ Multiple dependencies in one method.
+
+---
+
+### Best Practices
+
+* Prefer **constructor injection** for required dependencies.
+* Avoid overusing field injection — it's harder to test.
+* Avoid having too many dependencies — it may be a sign of a class doing too much (violating SRP - Single Responsibility Principle).
+
+If you meant something else by “in how many `@Autowired` can be injected,” feel free to clarify!
 
 ## 10. Wiring Beans using `@Autowiring`
 
