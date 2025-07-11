@@ -4926,6 +4926,385 @@ Custom security configurations in Spring Security allow role-based access to res
 
 ---
 
-Let me know if you'd like this turned into a PDF, used in a classroom, or exported into Markdown or slides!
+Great! Let’s continue with the next topics:
+
+---
+
+### 4. Exception Handling using `@ControllerAdvice` & `@ExceptionHandler`
+
+#### ✅ Use-case Example
+
+```java
+@ControllerAdvice
+public class GlobalExceptionHandler {
+  @ExceptionHandler(EntityNotFoundException.class)
+  public ResponseEntity<String> handleNotFound(EntityNotFoundException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+  }
+}
+```
+
+#### 🔍 5 Bullet-point Explanations
+
+* 🧩 **Global scope**: `@ControllerAdvice` applies across all controllers.
+* 🎯 **Exception routing**: `@ExceptionHandler` maps exception types to handlers.
+* 🛠️ **Custom responses**: Handle exceptions with specific HTTP codes and messages.
+* ✂️ **Separation of concerns**: Keeps controllers clean from error-handling logic.
+* ⚙️ **Broad capability**: Supports multiple exception types or a generic handler.
+
+#### 🔚 Summary (5 lines)
+
+Using `@ControllerAdvice` with `@ExceptionHandler` centralizes error handling in Spring MVC. It intercepts unchecked and custom exceptions thrown by any controller, allowing you to return standardized HTTP statuses and messages. This improves maintainability, eliminating repetitive try/catch blocks. You can define handlers per exception type or a generic fallback. It enables a cleaner separation between business logic and error handling.
+
+#### 💻 Code at End of Summary
+
+```java
+@ControllerAdvice
+public class GlobalExceptionHandler {
+  @ExceptionHandler(EntityNotFoundException.class)
+  public ResponseEntity<String> handleNotFound(EntityNotFoundException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+  }
+}
+```
+
+#### 🧠 Interview Q\&A
+
+1. **Q: What does `@ControllerAdvice` do?**
+   **A:** It marks a class as a global exception handler across all controllers.
+
+2. **Q: How do you handle multiple exception types in one method?**
+   **A:** List them in `@ExceptionHandler({TypeA.class, TypeB.class})`.
+
+3. **Q: What if an exception isn’t handled explicitly?**
+   **A:** It falls back to default Spring behavior—typically HTTP 500 with stack trace or generic message.
+
+---
+
+### 5. Introduction to `@ControllerAdvice` & `@ExceptionHandler` annotations
+
+#### ✅ Use-case Example
+
+```java
+@ControllerAdvice
+public class ApiErrorHandler {
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<Map<String,String>> handleValidation(MethodArgumentNotValidException ex) {
+    Map<String,String> errors = ex.getBindingResult().getFieldErrors()
+      .stream().collect(Collectors.toMap(e->e.getField(), DefaultMessageSourceResolvable::getDefaultMessage));
+    return ResponseEntity.badRequest().body(errors);
+  }
+}
+```
+
+#### 🔍 5 Bullet-point Explanations
+
+* 🌍 **Central hub**: `@ControllerAdvice` consolidates global behaviors like validation handling.
+* 🧪 **Validator exceptions**: Handles form binding errors automatically.
+* 📄 **Structured feedback**: Returns field-level error details to clients.
+* 🎭 **Reusability**: Applies across multiple controllers or endpoints.
+* 🛡️ **Consistency**: Ensures uniform error format for front-end or API clients.
+
+#### 🔚 Summary (5 lines)
+
+These annotations enable centralized exception handling in Spring apps. `@ControllerAdvice` identifies a global handler class, while `@ExceptionHandler` denotes methods handling specific exceptions. They enhance consistency and reduce repetitive code in controllers. Ideal for handling validation, access errors, business exceptions, etc. They enable returning structured HTTP responses (e.g., JSON error payloads).
+
+#### 💻 Code at End of Summary
+
+```java
+@ControllerAdvice
+public class ApiErrorHandler {
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<Map<String,String>> handleValidation(MethodArgumentNotValidException ex) {
+    Map<String,String> errors = ex.getBindingResult().getFieldErrors()
+      .stream().collect(Collectors.toMap(e->e.getField(), DefaultMessageSourceResolvable::getDefaultMessage));
+    return ResponseEntity.badRequest().body(errors);
+  }
+}
+```
+
+#### 🧠 Interview Q\&A
+
+1. **Q: Can `@ControllerAdvice` be made to only apply to certain controllers?**
+   **A:** Yes—you can limit scope using attributes like `basePackages` or assignable types.
+
+2. **Q: How do you send a custom HTTP status from an exception handler?**
+   **A:** Return a `ResponseEntity<T>` with your desired `HttpStatus`.
+
+3. **Q: What’s the order of exception handlers if multiple match?**
+   **A:** Spring chooses the most specific exception type first, then broader ones.
+
+---
+
+### 6. Demo of `@ControllerAdvice` & `@ExceptionHandler` annotations
+
+#### ✅ Use-case Example
+
+```java
+@ControllerAdvice
+public class RestExceptionHandler {
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<Map<String,String>> genericHandler(Exception ex) {
+    Map<String,String> error = Map.of("error", "Internal error", "details", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+  }
+}
+```
+
+#### 🔍 5 Bullet-point Explanations
+
+* 📦 **Catch-all handler**: Handles any uncaught exceptions.
+* 🧽 **Sanitize output**: Masks internal stack traces, avoids exposing sensitive data.
+* 📦 **JSON structure**: Provides consistent error payload.
+* 🔁 **Logging integration**: You can log inside handler before sending response.
+* 🔧 **Developer mode**: Expand detail in dev, narrow in prod.
+
+#### 🔚 Summary (5 lines)
+
+This demo shows a catch-all exception handler using `Exception.class`. It's useful to ensure your API doesn’t leak stack traces and returns a clean, consistent error response. Combined with more specific handlers, it forms a robust exception handling hierarchy. Useful for logging and differentiating between client vs internal errors. Helps both dev and production environments.
+
+#### 💻 Code at End of Summary
+
+```java
+@ControllerAdvice
+public class RestExceptionHandler {
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<Map<String,String>> genericHandler(Exception ex) {
+    Map<String,String> error = Map.of("error", "Internal error", "details", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+  }
+}
+```
+
+#### 🧠 Interview Q\&A
+
+1. **Q: How do you avoid exposing internal errors to clients?**
+   **A:** Use a generic handler for `Exception.class` that hides stack details.
+
+2. **Q: Should you catch `Error` or `Throwable`?**
+   **A:** No—catching those is too broad; focus on `Exception` or specific subtypes.
+
+3. **Q: How do you log exceptions in `@ExceptionHandler`?**
+   **A:** Use a logger (e.g., SLF4J) inside the method, then return a user-safe response.
+
+---
+
+
+
+Great! Let’s continue with the remaining Spring Security CSRF topics and quizzes.
+
+---
+
+### 7. **“Exception Handling using `@ControllerAdvice` & `@ExceptionHandler`” Quiz**
+
+#### ✅ Quiz Questions with Answers
+
+1. **Q:** What does `@ControllerAdvice` do?
+   **A:** It allows you to define global exception handling logic across all controllers.
+
+2. **Q:** How do you return a custom HTTP status code from an exception handler?
+   **A:** By returning a `ResponseEntity` with the desired `HttpStatus`.
+
+3. **Q:** Can multiple exception handlers exist for different exception types?
+   **A:** Yes, each method annotated with `@ExceptionHandler` can handle specific exception types.
+
+---
+
+### 8. **Implement CSRF Fix inside Web App - Spring Security Part 2**
+
+#### ✅ Use-case Example (HTML form + CSRF token)
+
+```html
+<form method="post" action="/submit">
+  <input type="text" name="data">
+  <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+  <button type="submit">Submit</button>
+</form>
+```
+
+```java
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+  http
+    .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+    .and()
+    .authorizeRequests().anyRequest().authenticated()
+    .and().formLogin();
+}
+```
+
+#### 🔍 5 Bullet-point Explanations
+
+* 🔐 **Token inclusion**: Insert CSRF token in all POST/PUT/DELETE forms.
+* 🍪 **Cookie-based token**: `CookieCsrfTokenRepository` stores the token in a cookie.
+* 🔁 **Client-side access**: `HttpOnlyFalse` allows JavaScript to read token if needed.
+* ✅ **Form compatibility**: Thymeleaf and JSP automatically handle CSRF fields if configured.
+* 🧪 **Test-ready**: Ensures full-cycle CSRF protection in form submissions.
+
+#### 🔚 Summary (5 lines)
+
+To fix CSRF in web apps, you ensure the token is included in each modifying request. Using `CookieCsrfTokenRepository`, Spring writes the CSRF token to a cookie, which you read and submit with each request. Thymeleaf and Spring auto-inject tokens into forms. JavaScript apps must manually read the cookie and add the token to headers. This setup hardens the app against CSRF attacks.
+
+#### 💻 Code at End of Summary
+
+```java
+http.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
+```
+
+#### 🧠 Interview Q\&A
+
+1. **Q: Why use `CookieCsrfTokenRepository`?**
+   **A:** It allows CSRF token to be sent in cookies and accessed by JS-based apps like React/Angular.
+
+2. **Q: Can the CSRF token be stored in a session?**
+   **A:** Yes, the default repository stores it in the session.
+
+3. **Q: Is CSRF required for GET requests?**
+   **A:** No, CSRF protection is only needed for state-changing requests (POST, PUT, DELETE).
+
+---
+
+### 9. **Deep Dive of CSRF Attack**
+
+#### ✅ Real-World Scenario
+
+A user logs into a banking site. While logged in, they visit a malicious website that auto-submits a form to `https://bank.com/transfer` without the user knowing. Since the browser auto-sends cookies, the request appears legitimate.
+
+#### 🔍 5 Bullet-point Explanations
+
+* 🎯 **Targeted at authenticated users**: CSRF exploits active login sessions.
+* 📦 **Leverages cookies**: Browser auto-sends session cookies.
+* ❌ **Invisible form submission**: Often via hidden forms or auto-submitting JS.
+* 🛡️ **No JavaScript execution on the original domain**: It’s not XSS.
+* 🔒 **Spring defends via CSRF tokens**: Tokens must be part of POST/PUT/DELETE.
+
+#### 🔚 Summary (5 lines)
+
+CSRF attacks trick a logged-in user’s browser into sending unauthorized requests. The malicious site relies on browser behavior to send session cookies with the request. Because the browser is trusted, the server believes the request is genuine. CSRF tokens ensure the request originated from your site. This is why token verification is critical for secure state-changing operations.
+
+#### 💻 Example of Malicious Request
+
+```html
+<form action="https://bank.com/transfer" method="POST">
+  <input type="hidden" name="amount" value="10000">
+  <input type="hidden" name="toAccount" value="attacker123">
+  <input type="submit">
+</form>
+<script>document.forms[0].submit();</script>
+```
+
+#### 🧠 Interview Q\&A
+
+1. **Q: What makes CSRF different from XSS?**
+   **A:** CSRF exploits trusted users; XSS exploits trust in user-supplied content.
+
+2. **Q: Why does CSRF require a logged-in session?**
+   **A:** The attack relies on the browser sending valid authentication cookies.
+
+3. **Q: How can SameSite cookies help?**
+   **A:** Cookies with `SameSite=Strict` or `Lax` are not sent on cross-site requests, preventing CSRF.
+
+---
+
+### 10. **Solution for CSRF Attack - Theory**
+
+#### 🔍 5 Bullet-point Explanations
+
+* 🔐 **CSRF tokens**: Unpredictable value included in every modifying request.
+* 🍪 **Token tied to session**: CSRF token must match the user session.
+* 🔁 **Valid only once**: Optional rotation strategy enhances security.
+* ⚙️ **Enforced by server**: Request is rejected if token is missing/invalid.
+* 💡 **Stateless APIs use JWT or OAuth**: CSRF less of a concern in token-auth APIs.
+
+#### 🔚 Summary (5 lines)
+
+The solution to CSRF involves verifying a unique token for each user session on every state‑changing request. The server compares this token with its expected value. If missing or incorrect, the request is blocked. This prevents malicious third-party sites from executing unwanted actions on behalf of the user. For REST APIs, the use of tokens like JWT avoids CSRF altogether when cookies are not used.
+
+#### 💻 Code (Conceptual)
+
+```java
+http.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
+```
+
+#### 🧠 Interview Q\&A
+
+1. **Q: Is CSRF a concern in token-based APIs?**
+   **A:** Generally no, if the token is sent via headers, not cookies.
+
+2. **Q: Can HTTPS prevent CSRF?**
+   **A:** No, HTTPS only ensures encryption—not request origin integrity.
+
+3. **Q: What makes a CSRF token secure?**
+   **A:** It should be unique, unpredictable, and tied to the user session.
+
+---
+
+### 11. **Solution for CSRF Attack - Coding**
+
+#### ✅ Example Code
+
+```java
+@Configuration
+@EnableWebSecurity
+public class CsrfFixConfig extends WebSecurityConfigurerAdapter {
+  @Override
+  protected void configure(HttpSecurity http) throws Exception {
+    http
+      .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+      .and()
+      .authorizeRequests().anyRequest().authenticated()
+      .and()
+      .formLogin();
+  }
+}
+```
+
+#### 🔍 5 Bullet-point Explanations
+
+* ✅ **Enable CSRF with token repo**: Uses cookies to share token with front-end.
+* 🍪 **HttpOnly false**: Allows JS frameworks to read the token and set it in headers.
+* 🧪 **Form-safe**: Backed automatically into Thymeleaf/JSP forms.
+* 📦 **Complete fix**: Ensures protection against real-world CSRF vectors.
+* 🔐 **Secure integration**: Works well with Angular, React, etc.
+
+#### 🔚 Summary (5 lines)
+
+Implementing CSRF protection using `CookieCsrfTokenRepository` integrates well with modern front-end frameworks. Tokens are stored in cookies and sent in headers or form fields. Spring validates the token for each modifying request. If the token is missing or invalid, it blocks the action. This setup guards against CSRF while supporting SPA frameworks.
+
+#### 💻 Code at End of Summary
+
+```java
+http.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
+```
+
+#### 🧠 Interview Q\&A
+
+1. **Q: How do you support React/Angular apps with CSRF?**
+   **A:** Store the token in a cookie and require the client to include it in the request headers.
+
+2. **Q: What happens if CSRF token is missing in a POST request?**
+   **A:** Spring returns a 403 Forbidden error.
+
+3. **Q: Can you customize the token header name?**
+   **A:** Yes, using `CsrfTokenRepository.setHeaderName("X-CUSTOM-CSRF")`.
+
+---
+
+### 12. **“Implement CSRF fix inside Web App - Spring Security” Quiz**
+
+#### ✅ Quiz Questions with Answers
+
+1. **Q: What type of HTTP methods typically require CSRF protection?**
+   **A:** POST, PUT, PATCH, DELETE.
+
+2. **Q: What class helps expose CSRF token via cookies?**
+   **A:** `CookieCsrfTokenRepository`.
+
+3. **Q: What does `withHttpOnlyFalse()` mean in context of CSRF?**
+   **A:** It allows the client-side JS (e.g., React) to access the CSRF token in the cookie.
+
+---
+
+Would
 
 
