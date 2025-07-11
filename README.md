@@ -8246,6 +8246,216 @@ Page<Product> result = repo.findAll(pr);
 
 
 ---
+Below is a structured breakdown covering each requested topic. For each, I've included:
+
+* ✅ **5 real-time use-case bullet points**
+* 📝 **5-line concise summary**
+* 💻 **Code sample**
+* 🎯 **3 interview Q\&A**
+
+---
+
+## 1. Writing Custom Queries inside Spring Data JPA
+
+**Use‑cases:**
+
+* Retrieve orders placed in the last hour for a live dashboard.
+* Filter products matching a user-entered regex pattern.
+* Load only active users with non-null last login via partial loading.
+* Join `Order` and `Customer` for a combined view without extra entities.
+* Aggregate monthly sales grouped by region into DTOs.
+
+**Summary:**
+Custom queries let you define precise retrieval logic beyond CRUD, using JPQL or native SQL. They enable complex joins, filters, grouping, paging or DTO projection. Useful when method names become unreadably long. Supports pagination and dynamic parameters. They live on Repository interfaces via annotations or XML.
+
+```java
+public interface OrderRepo extends JpaRepository<Order, Long> {
+  @Query("SELECT new com.app.dto.SalesDTO(o.customer.region, sum(o.total)) " +
+         "FROM Order o WHERE o.createdAt > :since GROUP BY o.customer.region")
+  List<SalesDTO> findSalesSince(@Param("since") LocalDateTime since);
+}
+```
+
+**Interview Q\&A:**
+
+1. **Q:** Why use custom queries over method names?
+   **A:** For readability, flexibility, performance (JOINs, aggregation), and DTO projections where method names won't suffice.
+2. **Q:** How to support paging in custom queries?
+   **A:** Return `Page<T>` and accept `Pageable` param; Spring Data builds count query automatically.
+3. **Q:** Can I use native SQL in custom queries?
+   **A:** Yes, via `@Query(..., nativeQuery = true)`.
+
+---
+
+## 2. Introduction to custom queries using `@Query`, `@NamedQuery`, `@NamedNativeQuery` & JPQL
+
+**Use‑cases:**
+
+* Use `@Query` for lightweight inlined logic directly in interface.
+* `@NamedQuery` centralizes reusable JPQL in entity definitions.
+* `@NamedNativeQuery` allows vendor-specific SQL/performance tuning.
+* JPQL supports entity graph traversals and DTO mapping.
+* Use named queries across multiple repos/entities with common signatures.
+
+**Summary:**
+Spring Data JPA custom queries support both JPQL (entity‑centric) and native SQL. `@Query` is inline & flexible. `@NamedQuery` and `@NamedNativeQuery` reside on entity definitions, promoting reuse and design separation. They support both string and type-safe return types. Using JPQL maintains portability, while native queries give you fine‑grained SQL control.
+
+```java
+@Entity
+@NamedQuery(name = "User.byEmail",
+    query = "SELECT u FROM User u WHERE u.email = :email")
+@NamedNativeQuery(name = "User.byStatusNative",
+    query = "SELECT * FROM users u WHERE u.status = :status",
+    resultClass = User.class)
+public class User { ... }
+```
+
+**Interview Q\&A:**
+
+1. **Q:** Native vs JPQL differences?
+   **A:** JPQL uses entities, portable; native SQL uses actual tables/columns, may use DB-specific functions.
+2. **Q:** Why use named queries?
+   **A:** For reuse, type-safety, separation from repo, easier maintenance, pre-compilation in some providers.
+3. **Q:** How to call a named query from the repo?
+   **A:** Define in entity, then use `@Query(name = "User.byEmail") List<User> findByEmail(@Param("email") String email);`
+
+---
+
+## 3. Writing Custom Queries using `@Query` Annotation
+
+**Use‑cases:**
+
+* Inline querying recent customer activity limit 10.
+* Join `Product` and `Category` filtering by category name dynamically.
+* Fetch DTO projection to `LightUser` to reduce data load.
+* Use JSON functions in native SQL for PostgreSQL attributes.
+* Count records with specific conditions.
+
+**Summary:**
+`@Query` enables inline JPQL/native SQL directly on repository methods. It supports dynamic parameter binding (`:param` / `?1`), returns entities, DTOs, projections, paginated types. Native SQL supported via `nativeQuery = true`. Ideal for quick custom fetches without external definition overhead.
+
+```java
+public interface ProductRepo extends JpaRepository<Product,Long> {
+  @Query("SELECT new com.app.dto.LightProduct(p.id, p.name) " +
+         "FROM Product p JOIN p.category c WHERE c.name = :cat")
+  Page<LightProduct> findLightByCategory(@Param("cat") String category, Pageable pg);
+}
+```
+
+**Interview Q\&A:**
+
+1. **Q:** JPQL vs native SQL in `@Query`?
+   **A:** JPQL is entity-based and portable; native SQL lets you use database-specific features and raw tables.
+2. **Q:** How do you project to DTOs?
+   **A:** Use constructor expressions: `new com.app.dto.X(e.field1, e.field2)` in JPQL.
+3. **Q:** How to use pagination?
+   **A:** Return `Page<T>` and accept `Pageable`, Spring Data handles count query.
+
+---
+
+## 4. Writing Custom Update Queries using `@Query`, `@Modifying`, `@Transactional` Annotations
+
+**Use‑cases:**
+
+* Bulk status update of orders older than 30 days.
+* Reset failed login counts after timed lockout.
+* Apply percentage discount to all premium products.
+* Mark notifications as read in batch via query.
+* Move archived documents by setting new folder attribute.
+
+**Summary:**
+Bulk updates/deletes bypass persistence context, but need `@Modifying` & a transaction. Use JPQL/native queries with `@Query`, annotate repository method with `@Modifying`, and it must run within a transactional context (`@Transactional`, or managed service). Return modified row count (`int`).
+
+```java
+public interface OrderRepo extends JpaRepository<Order,Long> {
+  @Modifying
+  @Transactional
+  @Query("UPDATE Order o SET o.status = 'ARCHIVED' WHERE o.createdAt < :cutoff")
+  int archiveOldOrders(@Param("cutoff") LocalDate cutoff);
+}
+```
+
+**Interview Q\&A:**
+
+1. **Q:** Why is `@Modifying` needed?
+   **A:** Marks the query as one changing data (not select); Spring uses `executeUpdate()` instead of `getResultList()`.
+2. **Q:** Why `@Transactional`?
+   **A:** Updates require a transaction to commit; else changes won’t persist.
+3. **Q:** How to clear persistence context after modifying?
+   **A:** Add `clearAutomatically = true` on `@Modifying`, or call `EntityManager.clear()` manually.
+
+---
+
+## 5. Deep dive on `@NamedQuery`, `@NamedNativeQuery` inside Spring Data JPA
+
+**Use‑cases:**
+
+* Centralized complex join logic reused across services.
+* Use native query to leverage DB-specific window functions.
+* Switch implementations by replacing `@NamedQuery` rather than repo code.
+* Share common queries between microservices/entities.
+* Pre-compiled named queries give potential performance benefit in some JPA providers.
+
+**Summary:**
+`@NamedQuery` and `@NamedNativeQuery` are defined at the entity level, and referenced by name in repos. Named JPQL queries enhance portability and reuse. Named Native queries allow complex SQL, results mapped to entities or DTOs. Good for decoupling SQL from interface code and enabling provider-level pre-compilation.
+
+```java
+@Entity
+@NamedQuery(name = "Order.findHighValue",
+    query = "SELECT o FROM Order o WHERE o.total > :minTotal")
+@NamedNativeQuery(name = "Order.findByRegionNative",
+    query = "SELECT * FROM orders o JOIN customers c ON o.customer_id=c.id WHERE c.region = :reg",
+    resultClass = Order.class)
+public class Order { ... }
+```
+
+**Interview Q\&A:**
+
+1. **Q:** Benefits of named queries?
+   **A:** Reusability, maintainability, compile-time checking, can be loaded once at startup.
+2. **Q:** How to define return type for named native query?
+   **A:** Use `resultClass` for mapping to entity or `SqlResultSetMapping` for custom DTOs.
+3. **Q:** Differences between `@NamedQuery` and `@NamedNativeQuery`?
+   **A:** One is JPQL (portable, entity-based), the other is raw SQL (DB-specific, flexible but less portable).
+
+---
+
+## 6. Writing Custom Queries using `@NamedQuery`, `@NamedNativeQuery` Annotations
+
+**Use‑cases:**
+
+* Standard filter by status and creation date reused globally.
+* Native query using full-text search index support.
+* Named queries across repos reducing duplicated code.
+* Map complex result sets into lightweight DTOs.
+* Provide vendor-specific SQL for advanced grouping or analytics.
+
+**Summary:**
+Using named queries means you define them once in entities with a unique name. Repos use `@Query(name="...")` to invoke them. Named native queries support full SQL features including functions, indexes. Good for decoupling query logic from code and centralizing it at entity level.
+
+```java
+@Repository
+public interface OrderRepo extends JpaRepository<Order, Long> {
+  @Query(name = "Order.findHighValue")
+  List<Order> fetchHighValue(@Param("minTotal") BigDecimal minTotal);
+
+  @Query(name = "Order.findByRegionNative")
+  List<Order> findByRegion(@Param("reg") String region);
+}
+```
+
+**Interview Q\&A:**
+
+1. **Q:** How to call named native queries with custom result mapping?
+   **A:** Use `@SqlResultSetMapping` in the entity for DTO mapping.
+2. **Q:** What's the scope of named queries?
+   **A:** Scoped by persistence unit; globally available wherever entity manager can see them.
+3. **Q:** Are named queries precompiled?
+   **A:** Some JPA providers parse and validate them at startup, helping catch errors early.
+
+---
+
+Each section covers the topic, real-world context, core concepts, code, and interview prep. Let me know if you want any section expanded or put into a full sample project!
 
 
 
