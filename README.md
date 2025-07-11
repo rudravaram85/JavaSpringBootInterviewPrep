@@ -3294,6 +3294,511 @@ public class MyApp { ... }
 
 ---
 
-Let me know if you'd like code expanded, examples in Spring WebFlux, or deep dives on any section!
+Here are the requested sections—with real‑time use‑case coding examples, five bullet‑point explanations each, a five‑line summary, followed by three interview-style questions and answers for each topic.
+
+---
+
+## 1. “Building Web Applications using Spring Boot and Spring MVC” Quiz
+
+### Use‑Case Example
+
+Real‑time: a simple book management CRUD REST + MVC pages.
+
+### 5 Explanations
+
+* Spring Boot auto‑configures Spring MVC and embedded Tomcat allowing rapid setup.
+* Controllers annotated with `@Controller` or `@RestController` map web requests to handler methods.
+* Views (e.g. Thymeleaf) are resolved via ViewResolver to render pages.
+* REST endpoints can be combined with MVC pages in same app.
+* Boot provides starter dependencies (`spring-boot-starter-web`) to integrate MVC seamlessly.
+
+### Summary (5 lines)
+
+A Spring Boot web application is built using starters that pull in Spring MVC and embed a servlet container. Controllers define handlers for HTTP requests using annotations. Views can be JSP, Thymeleaf or others and are auto‑resolved. REST and MVC paradigms co‑exist in the same Boot app. Spring Boot simplifies web app setup and deployment.
+
+```java
+@SpringBootApplication
+public class App { public static void main(String[] args){ SpringApplication.run(App.class,args);} }
+
+@Controller
+public class BookController {
+  @GetMapping("/books") public String list(Model m){
+    m.addAttribute("list", List.of(new Book(1,"Title")));
+    return "books"; }
+}
+```
+
+### Interview Q\&A
+
+1. **What does `@RestController` do?**
+   It combines `@Controller` and `@ResponseBody`, so methods return JSON directly.
+2. **How does Spring Boot pick a view template?**
+   It auto‑configures a `ThymeleafViewResolver` or other, scanning `src/main/resources/templates`.
+3. **What starter dependency is needed for MVC apps?**
+   `spring-boot-starter-web` which brings Spring MVC and embedded Tomcat.
+
+---
+
+## 2. Quick Tip – Mapping multiple paths inside Spring Web Application
+
+### Use‑Case Example
+
+Single handler responds to both `/home` and `/index`.
+
+### 5 Explanations
+
+* `@RequestMapping` or `@GetMapping` accepts an array of paths.
+* Allows reuse of same logic for multiple URL patterns.
+* Reduces duplicate code in controllers.
+* Supports path variables and parameters across multiple mappings.
+* Combined with method-level annotations for clarity.
+
+### Summary (5 lines)
+
+Spring MVC allows mapping multiple URL paths to one handler method using arrays inside the mapping annotation. This helps serve the same endpoint logic under different route names. It simplifies code and avoids duplication. Parameters and method signatures remain consistent. It works seamlessly in both Boot and plain Spring MVC apps.
+
+```java
+@GetMapping({"/home", "/index", "/"})
+public String showHome(Model model) {
+    model.addAttribute("now", LocalDateTime.now());
+    return "home";
+}
+```
+
+### Interview Q\&A
+
+1. **Can you map both GET and POST to same method?**
+   Yes using `@RequestMapping(value={"/path1","/path2"}, method={RequestMethod.GET, RequestMethod.POST})`.
+2. **What about path variables?**
+   You must include same variable pattern in each path, e.g. `"/user/{id}", "/member/{id}"`.
+3. **Could this cause ambiguity?**
+   If paths overlap, Spring may throw ambiguous mapping exception — avoid overlapping patterns.
+
+---
+
+## 3. Introduction to Spring Boot DevTools
+
+### Use‑Case Example
+
+Auto‑restart and live reload when editing: editing HTML or Java class triggers reload.
+
+### 5 Explanations
+
+* DevTools watches classpath resources and restarts the app on changes.
+* Includes LiveReload integration for browser auto-refresh.
+* Disables caches and static resource caching for fast iteration.
+* Automatically enables remote debugging and development‑only properties.
+* Excluded from production by default (via scope=“runtime”).
+
+### Summary (5 lines)
+
+Spring Boot DevTools enhances development experience by auto‑restarting the application upon code changes and reloading the browser via LiveReload. It disables template and resource caching, making changes visible immediately. DevTools enables remote debug and activates developer‑only properties by default. It is non‑invasive and excluded from production builds. Installation is as simple as adding the dependency.
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-devtools</artifactId>
+  <scope>runtime</scope>
+</dependency>
+```
+
+### Interview Q\&A
+
+1. **How does DevTools restart the app?**
+   It launches two classloaders—one for restartable classes—restarting only custom classes.
+2. **Does it work in packaged jar mode?**
+   It works only in IDE run/`spring-boot:run`, not when running packaged jar externally.
+3. **Is DevTools included in final build?**
+   No, it's scoped to `runtime` by default and excluded from fat jars.
+
+---
+
+## 4. Implementation & Demo of Spring Boot DevTools
+
+### Use‑Case Example
+
+Modify controller class or static resources, see server restart and browser reload.
+
+### 5 Explanations
+
+* Run via `mvn spring-boot:run` or IDE.
+* Save changes: DevTools detects file change and triggers restart.
+* Browser refresh happens automatically if LiveReload extension running.
+* Logging shows “Restart completed” message.
+* Works for `.java`, `.properties`, `.html`, CSS, JS resources.
+
+### Summary (5 lines)
+
+In a live Spring Boot instance started via Maven or IDE, DevTools monitors source and resource directories. When saved, it restarts the app or reloads changed classes and refreshes the browser. Logs indicate restart completion. You can confirm changes by editing a template or controller method. LiveReload plugin in browser enhances UX.
+
+```java
+// Controller with greeting
+@GetMapping("/greet")
+public String greet(Model m) {
+    m.addAttribute("msg", "Hello at " + LocalTime.now());
+    return "greet";
+}
+```
+
+### Interview Q\&A
+
+1. **What directories does DevTools watch by default?**
+   `src/main/resources`, `src/main/java`, `classpath:/static` and templates.
+2. **How to disable LiveReload?**
+   Set `spring.devtools.livereload.enabled=false` in `application.properties`.
+3. **What happens on fatal errors in restart?**
+   DevTools doesn’t restart: you should fix errors and rerun the app manually.
+
+---
+
+## 5. Deep Dive of Spring MVC Internal Architecture
+
+### Use‑Case Example
+
+Outline request lifecycle: DispatcherServlet → HandlerMapping → HandlerAdapter → ViewResolver.
+
+### 5 Explanations
+
+* DispatcherServlet is the front controller for all HTTP requests.
+* HandlerMapping selects controller method by match.
+* HandlerAdapter invokes matched method and returns ModelAndView.
+* ViewResolver maps view names to actual view templates.
+* Interceptors (HandlerInterceptor) can be added before/after handler execution.
+
+### Summary (5 lines)
+
+Spring MVC internal flow begins with DispatcherServlet receiving a request, delegating to HandlerMapping. A HandlerAdapter calls the controller method, yielding a ModelAndView. Post‑processing interceptors apply before view rendering. Finally, ViewResolver picks the template to render the response. This modular design supports customization at each stage.
+
+```java
+// Example interceptor for logging
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+  @Override
+  public void addInterceptors(InterceptorRegistry reg) {
+    reg.addInterceptor(new HandlerInterceptorAdapter(){
+      @Override
+      public boolean preHandle(HttpServletRequest req, HttpServletResponse res, Object handler) {
+        System.out.println("Before handler: " + req.getRequestURI());
+        return true;
+      }
+    });
+  }
+}
+```
+
+### Interview Q\&A
+
+1. **What is DispatcherServlet?**
+   The central dispatcher that handles request routing and workflow orchestration in Spring MVC.
+2. **How do interceptors differ from filters?**
+   Filters are Servlet‑level; interceptors are Spring MVC level with access to handler method info.
+3. **How does Spring locate a view?**
+   Using configured `ViewResolver`, typically prefix/suffix mappings to find template files.
+
+---
+
+## 6. Quick Tip – Resolving Build & Cache Issues inside Maven Projects
+
+### Use‑Case Example
+
+Clean cache, rebuild to fix stale dependencies or plugin versions.
+
+### 5 Explanations
+
+* Use `mvn clean install -U` to force update snapshots/releases.
+* Delete `.m2/repository` entries for corrupted artifacts.
+* Clear IDE cache or re-import project if compilation errors persist.
+* Use `mvn dependency:purge-local-repository` to remove problematic artifacts.
+* Enable verbose logging to diagnose plugin or version mismatches.
+
+### Summary (5 lines)
+
+To solve Maven build and cache issues, it's effective to run full clean builds with forced dependency updates (`-U`) and purge the local repository if necessary. Deleting corrupted artifacts or using `dependency:purge-local-repository` clears cache. IDE caches may also require invalidation. Verbose mode helps identify plugin conflicts. This restores consistent builds.
+
+```bash
+mvn clean install -U
+# or
+mvn dependency:purge-local-repository clean install -U
+```
+
+### Interview Q\&A
+
+1. **What does `-U` flag do?**
+   Forces Maven to check remote repositories and update snapshots/releases even if local copies exist.
+2. **When to purge local repo?**
+   When artifacts are corrupted or version mismatches persist after updates.
+3. **How do you fix IDE-specific build issues?**
+   Invalidate/restart IDE, re-import Maven project, ensure Maven wrapper version consistency.
+
+---
+
+## 7. Submit information from Contact page using @RequestParam
+
+### Use‑Case Example
+
+A contact form sends name and email via query or form parameters to controller.
+
+### 5 Explanations
+
+* Use `@RequestParam("field")` to bind query or form parameters to method args.
+* Can set `required=false` and default values.
+* Handles simple primitive/String types.
+* Supports validation manually inside controller.
+* One-off forms or simple endpoints benefit from this.
+
+### Summary (5 lines)
+
+Using `@RequestParam`, you can bind web form inputs or query parameters directly to controller method parameters. It supports default values and optional fields. Best suited for small forms with simple types. Validation logic must be handled explicitly. It’s lightweight and explicit, requiring no model binding.
+
+```java
+@PostMapping("/contact")
+public String submit(@RequestParam String name,
+                     @RequestParam String email,
+                     Model model) {
+    model.addAttribute("msg", "Thanks, " + name);
+    return "contactResult";
+}
+```
+
+### Interview Q\&A
+
+1. **Is `@RequestParam` required by default?**
+   Yes—but you can mark it optional with `required=false` and set `defaultValue`.
+2. **How to validate email format?**
+   You manually check in controller or delegate to service/validator.
+3. **Can `@RequestParam` bind lists or arrays?**
+   Yes, e.g. `@RequestParam List<String> tags`, accepts repeated query/form parameters.
+
+---
+
+## 8. Submit information from Contact page using POJO object
+
+### Use‑Case Example
+
+Binding a ContactDTO with fields name, email, message automatically using `@ModelAttribute`.
+
+### 5 Explanations
+
+* `@ModelAttribute` binds form fields to a POJO.
+* Supports nested objects and field conversion.
+* Enables JSR‑303 bean validation with `@Valid`.
+* Cleaner controller signatures when many fields.
+* Spring auto-instantiates the model object.
+
+### Summary (5 lines)
+
+Using a POJO with `@ModelAttribute`, Spring MVC automatically binds form data to an object instance. This enables structured binding, type conversion, and easier validation. Controllers remain clean and maintainable as forms grow. JSR‑303 annotations can enforce constraints. It’s ideal for forms with multiple fields or nested data.
+
+```java
+public class Contact {
+  private String name;
+  private String email;
+  private String message;
+  // getters/setters
+}
+
+@PostMapping("/contact")
+public String submit(@ModelAttribute @Valid Contact contact, BindingResult br, Model m) {
+    if(br.hasErrors()) return "contactForm";
+    m.addAttribute("msg", "Received from " + contact.getName());
+    return "contactResult";
+}
+```
+
+### Interview Q\&A
+
+1. **What’s the difference between `@RequestParam` and `@ModelAttribute`?**
+   `@RequestParam` binds individual parameters; `@ModelAttribute` binds whole form into a POJO.
+2. **How to trigger validation?**
+   Use `@Valid` and inspect `BindingResult`.
+3. **Can nested POJOs be bound?**
+   Yes, if form field names match nested structure (e.g. `address.street`).
+
+---
+
+## 9. Deep dive of Lombok library
+
+### Use‑Case Example
+
+Reduce boilerplate in entity class with `@Data`, `@AllArgsConstructor`, `@NoArgsConstructor`.
+
+### 5 Explanations
+
+* Lombok generates getters, setters, constructors, equals/hashCode, toString at compile time.
+* `@Slf4j` injects a static SLF4J logger field.
+* `@Builder` creates fluent builders.
+* Reduces verbosity and improves readability of domain classes.
+* Requires IDE plugin or annotation processing enabled.
+
+### Summary (5 lines)
+
+Lombok is a compile‑time code generator that drastically reduces boilerplate, especially in Java beans. Annotations like `@Data`, `@Builder`, `@Slf4j`, and constructors simplify entity and service class definitions. It integrates via annotation processors and requires IDE support. The generated code is equivalent to manually written getters/setters. Lombok speeds development and boosts maintainability.
+
+```java
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class User {
+  private Long id;
+  private String name;
+  private String email;
+}
+```
+
+### Interview Q\&A
+
+1. **What does `@Data` cover?**
+   It includes getters, setters, `toString()`, `equals()`, `hashCode()`, and a required‑args constructor.
+2. **Any downsides to Lombok?**
+   IDE dependency, possible confusion for newcomers, and sometimes obscured generated code.
+3. **Is Lombok safe for production use?**
+   Yes, it only influences compile time and the generated bytecode is plain Java code.
+
+---
+
+## 10. Introduction to Lombok library
+
+This is essentially similar to above—boilerplate reduction in Java.
+
+### 5 Explanations
+
+* Simplifies Java bean code by auto-generating repetitive methods.
+* Works via annotations (`@Getter`, `@Setter`, etc.).
+* Supports builder pattern (`@Builder`).
+* Requires annotation processing enabled in build and IDE.
+* Lightweight and compile‑only dependency.
+
+### Summary (5 lines)
+
+Lombok provides a set of annotations to automatically generate common Java code like getters, setters, constructors, and builders. It's designed to improve readability by reducing boilerplate. You need to enable annotation processing and often install an IDE plugin. The output class files include the generated methods, no runtime dependency. Lombok is widely used in modern Spring Boot applications.
+
+```java
+@Getter @Setter
+public class Product {
+  private Long id;
+  private String name;
+}
+```
+
+### Interview Q\&A
+
+1. **How to enable Lombok in IntelliJ?**
+   Install Lombok plugin and enable annotation processing in settings.
+2. **What happens if you forget annotation processing?**
+   Generated methods won’t appear, causing compilation errors.
+3. **Does Lombok add extra runtime libraries?**
+   No, it’s compile-time only; no dependency in runtime classpath unless annotations require it.
+
+---
+
+## 11. Implementing Lombok inside Web App
+
+### Use‑Case Example
+
+Using Lombok in Spring Boot entity, DTO, controller classes instead of manual boilerplate.
+
+### 5 Explanations
+
+* Add Lombok dependency in `pom.xml`.
+* Annotate DTOs, entities, controllers with Lombok annotations.
+* Clean code without manual getters and constructors.
+* Works with `@Slf4j` inside `@Service` and `@Controller`.
+* Speeds up writing request/response DTOs and domain models.
+
+### Summary (5 lines)
+
+To implement Lombok in a Spring Boot web application, include the Lombok dependency and enable annotation processing. Use annotations like `@Getter`, `@Setter`, `@Data`, and `@Slf4j` in entities, controllers, and services. This drastically reduces class verbosity and improves maintainability. Logging becomes simpler with a generated logger. Integration is seamless and boosts productivity.
+
+```java
+@Controller
+@Slf4j
+public class HomeController {
+  @GetMapping("/")
+  public String home(Model model) {
+    log.info("Rendering home");
+    model.addAttribute("time", LocalTime.now());
+    return "home";
+  }
+}
+```
+
+### Interview Q\&A
+
+1. **How do you log with Lombok?**
+   Use `@Slf4j` annotation and call `log.info(...)`.
+2. **Is Lombok required at runtime?**
+   No, generated code is part of compiled class; Lombok library not required at runtime.
+3. **What compile‑time plugin is needed?**
+   The Lombok annotation-processor, enabled in IDE/build tool.
+
+---
+
+## 12. Demo of @Slf4j annotation from Lombok library
+
+### Use‑Case Example
+
+Controller logs requests using `@Slf4j` without manual logger setup.
+
+### 5 Explanations
+
+* `@Slf4j` injects a `private static final org.slf4j.Logger log` field.
+* You can directly call `log.debug()`, `log.error()`, etc.
+* No manual instantiation like `LoggerFactory.getLogger(...)`.
+* Keeps code cleaner and consistent across classes.
+* Supports other logging annotations like `@Log4j2` or `@CommonsLog`.
+
+### Summary (5 lines)
+
+By annotating your class with `@Slf4j`, Lombok automatically generates a logger instance for SLF4J. You can immediately use `log.info()`, `log.warn()`, `log.error()`, etc., without boilerplate. This makes logging concise and consistent. It avoids repetitive code and configures the correct logger per class. It’s helpful across controllers, services, and other Spring components.
+
+```java
+@Service
+@Slf4j
+public class BookingService {
+  public void book(String user) {
+    log.info("Booking for user {}", user);
+    // business logic
+  }
+}
+```
+
+### Interview Q\&A
+
+1. **Which logger interface does `@Slf4j` use?**
+   It uses the SLF4J `org.slf4j.Logger`.
+2. **Can you change to Log4j2?**
+   Yes, use `@Log4j2` instead.
+3. **Why prefer `@Slf4j`?**
+   It’s framework-agnostic and works with any SLF4J-compatible backend like Logback or Log4j.
+
+---
+
+## 13. “Lombok library” Quiz
+
+### Use‑Case Example
+
+Short knowledge check questions about Lombok.
+
+### 5 Explanations
+
+Explain differences between annotations, caveats, best practices…
+
+### Summary (5 lines)
+
+This quiz covers Lombok annotations like `@Data`, `@Builder`, logging annotations, compile-time behavior, and IDE setup. It tests understanding of how Lombok integrates into Java projects and Spring Boot apps. The questions focus on concepts, generated code, and tradeoffs. It reinforces best practices and potential pitfalls. Useful for interview prep or classroom testing.
+
+### Example Quiz (5 Q’s, but listed three with answers)
+
+1. **What does `@Data` not generate?**
+   Generates everything except a no‑args constructor (unless you add `@NoArgsConstructor`).
+2. **How do you exclude a field from `toString()`?**
+   Use `@ToString.Exclude` on that field.
+3. **Can Lombok annotations conflict with JPA?**
+   Yes—in sensitive cases, eg. `@EqualsAndHashCode` may affect entity identity; prefer manual or exclude ID fields.
+
+---
+
+Let me know if you’d like any section expanded or additional details!
 
 
