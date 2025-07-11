@@ -5305,6 +5305,526 @@ http.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
 
 ---
 
-Would
+Great! Let's begin with the first three topics:
+
+---
+
+## **1. Introduction to In-Memory H2 Database of Spring Boot**
+
+### ✅ Real-Time Use Case
+
+Imagine you're developing a Spring Boot application and need a lightweight, fast database for development or testing purposes. The H2 in-memory database is perfect for this use case as it doesn’t require external setup and resets with every restart.
+
+### 🔍 Key Points
+
+* **In-memory mode** stores data in RAM, making it ideal for testing.
+* **Integrated with Spring Boot**, enabling auto-configuration.
+* **Web console** can be enabled for debugging SQL queries.
+* **Fast performance** and zero setup make it excellent for rapid prototyping.
+* **Supports standard SQL** and integrates easily with JPA or JDBC.
+
+### 📝 Summary
+
+The H2 in-memory database is a Java-based lightweight relational database. When used in Spring Boot applications, it provides fast performance and no persistent storage unless configured. Developers leverage it mostly for testing, development, or proof-of-concept environments. Its web UI console (`/h2-console`) is helpful for querying and debugging data. Being automatically configured by Spring Boot, it saves a lot of boilerplate setup.
+
+### 💻 Code Example
+
+**`application.properties`**
+
+```properties
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+spring.h2.console.enabled=true
+spring.h2.console.path=/h2-console
+```
+
+**`build.gradle` (dependency)**
+
+```groovy
+implementation 'com.h2database:h2'
+```
+
+---
+
+### 👔 Interview Questions
+
+1. **Q:** Why is the H2 in-memory database commonly used in Spring Boot applications?
+   **A:** It's fast, doesn't need installation, resets on restart, and is ideal for testing.
+
+2. **Q:** How do you enable the H2 web console in a Spring Boot app?
+   **A:** By setting `spring.h2.console.enabled=true` and configuring the path.
+
+3. **Q:** What’s a limitation of using H2 in-memory DB?
+   **A:** Data is not persistent; it gets erased once the application stops.
+
+---
+
+## **2. Setup H2 Database inside a Spring Boot Web Application**
+
+### ✅ Real-Time Use Case
+
+You’re building a contact form web application and need to quickly store contact messages during development. Instead of connecting to MySQL, you use H2 for easier testing.
+
+### 🔍 Key Points
+
+* **Add H2 dependency** in your `build.gradle` or `pom.xml`.
+* **Configure properties** for JDBC URL and console access.
+* **Enable web console** to view and debug DB data.
+* **Can be used with JPA or JDBC** for ORM or raw queries.
+* **Create schema/data** via schema.sql/data.sql or annotations.
+
+### 📝 Summary
+
+Setting up H2 in a Spring Boot app involves dependency management, property configuration, and optionally, schema setup. You can interact with it through the `/h2-console` web interface, which mimics a DB client. H2 fits perfectly into early-stage development or testing pipelines. Since Spring Boot auto-configures it, minimal setup is required.
+
+### 💻 Code Example
+
+**`application.properties`**
+
+```properties
+spring.datasource.url=jdbc:h2:mem:contactdb
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+spring.datasource.initialization-mode=always
+spring.h2.console.enabled=true
+spring.h2.console.path=/h2-console
+```
+
+**`schema.sql`**
+
+```sql
+CREATE TABLE contact_message (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255),
+  email VARCHAR(255),
+  message TEXT
+);
+```
+
+**`data.sql` (optional)**
+
+```sql
+INSERT INTO contact_message (name, email, message) VALUES ('Alice', 'alice@example.com', 'Hello there!');
+```
+
+---
+
+### 👔 Interview Questions
+
+1. **Q:** How do you initialize a schema in H2 via Spring Boot?
+   **A:** Using `schema.sql` in the resources directory or with JPA annotations.
+
+2. **Q:** What URL do you use to access H2 console by default?
+   **A:** `/h2-console`
+
+3. **Q:** Can H2 be used as a file-based database in Spring Boot?
+   **A:** Yes, by changing the JDBC URL to `jdbc:h2:file:~/testdb`.
+
+---
+
+## **3. Deep Dive on Usage of JdbcTemplate**
+
+### ✅ Real-Time Use Case
+
+You want to perform DB operations like saving contact messages using SQL, but without JPA overhead. `JdbcTemplate` offers you that simplicity.
+
+### 🔍 Key Points
+
+* **Simplifies JDBC operations** like insert, update, delete, and query.
+* **Handles boilerplate code**: Connection management, error handling.
+* **Provides mapping utilities** like `RowMapper`.
+* **Supports named parameters and prepared statements.**
+* **Highly performant** and ideal for simple CRUD without ORM.
+
+### 📝 Summary
+
+`JdbcTemplate` is part of Spring JDBC and is designed to simplify database access. It abstracts common JDBC patterns, allowing you to execute SQL with minimal effort. It's best used when fine-grained control over SQL is desired or for legacy systems. With strong exception handling and resource management, it's a powerful alternative to JPA.
+
+### 💻 Code Example
+
+**`ContactRepository.java`**
+
+```java
+@Repository
+public class ContactRepository {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    public int save(String name, String email, String message) {
+        String sql = "INSERT INTO contact_message (name, email, message) VALUES (?, ?, ?)";
+        return jdbcTemplate.update(sql, name, email, message);
+    }
+
+    public List<Map<String, Object>> findAll() {
+        return jdbcTemplate.queryForList("SELECT * FROM contact_message");
+    }
+}
+```
+
+---
+
+### 👔 Interview Questions
+
+1. **Q:** What does JdbcTemplate help you avoid in raw JDBC?
+   **A:** Boilerplate code like opening/closing connections, exception handling.
+
+2. **Q:** How does JdbcTemplate handle SQL injection risks?
+   **A:** By using prepared statements with parameterized queries.
+
+3. **Q:** What's the return type of `update()` method in JdbcTemplate?
+   **A:** It returns the number of rows affected.
+
+---
+
+Would you like to continue with the next few topics? For example:
+
+* **"Introduction to JDBC & problems with it"**
+* **"Introduction to Spring JDBC"**
+* **"Saving Contact Message using JdbcTemplate Insert Operation"**
+
+Perfect! Let's continue with the next **three topics** in the series:
+
+---
+
+## **4. Introduction to JDBC & Problems with It**
+
+### ✅ Real-Time Use Case
+
+You’re working on a legacy Java application that uses raw JDBC for database communication. You must manage SQL execution manually, including connection setup, error handling, and resource management.
+
+### 🔍 Key Points
+
+* **JDBC (Java Database Connectivity)** is a low-level API for database access.
+* **Manages database connection, statement, and result set manually**.
+* **Error-prone and verbose**, especially with exception handling.
+* **Requires boilerplate code** for even simple operations.
+* **Lacks built-in object mapping** to Java classes.
+
+### 📝 Summary
+
+JDBC is the foundational API that allows Java applications to communicate with relational databases using SQL. However, it comes with downsides like verbosity, manual resource handling, and lack of abstraction. Developers must write a lot of repetitive code for even basic operations, making it error-prone and hard to maintain in large applications.
+
+### 💻 Code Example
+
+```java
+Connection conn = null;
+PreparedStatement stmt = null;
+
+try {
+    conn = DriverManager.getConnection("jdbc:h2:mem:testdb", "sa", "");
+    stmt = conn.prepareStatement("INSERT INTO contact_message (name, email, message) VALUES (?, ?, ?)");
+    stmt.setString(1, "John Doe");
+    stmt.setString(2, "john@example.com");
+    stmt.setString(3, "Test message");
+    stmt.executeUpdate();
+} catch (SQLException e) {
+    e.printStackTrace();
+} finally {
+    try { if (stmt != null) stmt.close(); } catch (Exception e) {}
+    try { if (conn != null) conn.close(); } catch (Exception e) {}
+}
+```
+
+---
+
+### 👔 Interview Questions
+
+1. **Q:** What is JDBC used for?
+   **A:** It is used for executing SQL statements and managing database communication in Java.
+
+2. **Q:** What are common problems with using JDBC directly?
+   **A:** Verbosity, manual resource handling, lack of abstraction, and risk of SQL injection.
+
+3. **Q:** Is JDBC object-oriented or procedural?
+   **A:** It follows a procedural style with less abstraction.
+
+---
+
+## **5. Introduction to Spring JDBC**
+
+### ✅ Real-Time Use Case
+
+You're migrating a monolithic app that uses raw JDBC. To simplify your data access layer, you decide to use **Spring JDBC**, which reduces boilerplate and provides better exception handling.
+
+### 🔍 Key Points
+
+* **Wraps raw JDBC** with simplified operations.
+* **Uses JdbcTemplate** to abstract repetitive code.
+* **Integrates smoothly with Spring Boot** via dependency injection.
+* **Provides cleaner exception hierarchy** using `DataAccessException`.
+* **Still uses SQL**, giving you fine control over queries.
+
+### 📝 Summary
+
+Spring JDBC is a thin layer over JDBC that simplifies database operations using the `JdbcTemplate` class. It minimizes boilerplate, provides better exception translation, and integrates well with Spring’s dependency injection. It allows developers to use raw SQL when needed while making code more readable and maintainable.
+
+### 💻 Code Example
+
+```java
+@Repository
+public class ContactRepository {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    public int insertContact(String name, String email, String message) {
+        return jdbcTemplate.update(
+            "INSERT INTO contact_message (name, email, message) VALUES (?, ?, ?)",
+            name, email, message
+        );
+    }
+}
+```
+
+---
+
+### 👔 Interview Questions
+
+1. **Q:** What is the core class in Spring JDBC?
+   **A:** `JdbcTemplate`.
+
+2. **Q:** How does Spring JDBC simplify error handling?
+   **A:** It translates SQLExceptions into Spring's `DataAccessException`.
+
+3. **Q:** Is Spring JDBC a replacement for JPA?
+   **A:** No, it’s a simpler alternative for apps not needing full ORM capabilities.
+
+---
+
+## **6. Saving Contact Message Using JdbcTemplate Insert Operation**
+
+### ✅ Real-Time Use Case
+
+You have a contact form in your application. When a user submits a message, you need to persist it into an H2 database using a JDBC insert query.
+
+### 🔍 Key Points
+
+* **Uses `JdbcTemplate.update()`** for insert operations.
+* **Maps input fields directly to SQL parameters**.
+* **Returns number of affected rows** (useful for validation).
+* **Faster than JPA** for simple insert operations.
+* **Good for applications needing performance & control**.
+
+### 📝 Summary
+
+`JdbcTemplate`'s `update()` method is ideal for inserting records into a database. You pass the SQL string with placeholders and corresponding values. It's lightweight, avoids ORM complexity, and gives immediate control over SQL syntax. This method is perfect for basic CRUD operations like contact form submissions.
+
+### 💻 Code Example
+
+```java
+@Service
+public class ContactService {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    public String saveContact(String name, String email, String message) {
+        int rows = jdbcTemplate.update(
+            "INSERT INTO contact_message (name, email, message) VALUES (?, ?, ?)",
+            name, email, message
+        );
+        return rows == 1 ? "Saved successfully" : "Failed to save";
+    }
+}
+```
+
+---
+
+### 👔 Interview Questions
+
+1. **Q:** What method is used to insert records using JdbcTemplate?
+   **A:** `update()`.
+
+2. **Q:** What is returned by JdbcTemplate’s `update()` method?
+   **A:** The number of rows affected.
+
+3. **Q:** How does JdbcTemplate prevent SQL injection?
+   **A:** Through parameterized queries using placeholders (`?`).
+
+---
+
+✅ **Up Next:** Would you like me to cover the remaining:
+
+* **Display Contact Messages using JdbcTemplate (Select Part 1 & 2)**
+* **Update Contact Messages using JdbcTemplate (Update)**
+* **Implementing AOP in a Web Application**
+
+Here are four detailed sections covering real-time use case examples, followed by sample code and relevant interview Q\&A for each topic:
+
+---
+
+## 1. Display Contact messages from DB using JdbcTemplate select operation - Part 1
+
+### ✅ Use Case & Explanation
+
+* ✅ Load all incoming contact messages marked as `NEW` from the DB for frontline support.
+* ✅ Map each row into a `ContactMessage` model via a RowMapper.
+* ✅ Leverage `JdbcTemplate.query(...)` to retrieve multiple rows.
+* ✅ Populate a list and return to a service or REST endpoint.
+* ✅ Handle `EmptyResultDataAccessException` to avoid null return.
+
+### 📋 Summary (5 lines)
+
+You’ll use `JdbcTemplate` to run a SELECT statement fetching all new contact messages. A `RowMapper` converts each row into a `ContactMessage` POJO. The `query()` call cleanly returns a `List<ContactMessage>`. Edge cases like no new messages are handled via exceptions. This forms a robust service layer foundation.
+
+```java
+public List<ContactMessage> fetchNewMessages() {
+    String sql = "SELECT id, name, email, message, status FROM contact_messages WHERE status = ?";
+    return jdbcTemplate.query(
+        sql,
+        new Object[]{ "NEW" },
+        (rs, rowNum) -> new ContactMessage(
+            rs.getLong("id"),
+            rs.getString("name"),
+            rs.getString("email"),
+            rs.getString("message"),
+            rs.getString("status")
+        )
+    );
+}
+```
+
+### ❓ Interview Questions
+
+1. **Q**: Why use `query()` instead of `queryForObject()` for multi-row results?
+   **A**: `query()` returns a `List` and handles multiple rows; `queryForObject()` expects exactly one row and throws an exception if zero or more than one row is returned.
+
+2. **Q**: What is a `RowMapper` and why use it?
+   **A**: A `RowMapper` is a callback interface that converts a JDBC `ResultSet` row into a model object. It decouples DB schema details from domain logic.
+
+3. **Q**: How do you handle no results in `query()`?
+   **A**: `query()` returns an empty list if there are no matches. An `EmptyResultDataAccessException` is only thrown when using methods like `queryForObject()`.
+
+---
+
+## 2. Display Contact messages from DB using JdbcTemplate select operation - Part 2
+
+### ✅ Use Case & Explanation
+
+* ✅ Fetch messages with pagination parameters (`OFFSET`, `LIMIT`).
+* ✅ Accept `page` and `size` to navigate history in admin UI.
+* ✅ Map each row to `ContactMessage` model via `RowMapper`.
+* ✅ Return result set plus total count.
+* ✅ Protect against SQL injection via parameterized queries.
+
+### 📋 Summary (5 lines)
+
+Here we'll implement pagination using `JdbcTemplate`. We run one query for total record count and another with `LIMIT ? OFFSET ?`. We map rows to `ContactMessage` objects. We return a custom `PagedResult<ContactMessage>`. This supports efficient paged UIs for message browsing.
+
+```java
+public PagedResult<ContactMessage> fetchMessagesPage(int page, int size) {
+    int offset = page * size;
+    String sqlList = "SELECT id, name, email, message, status FROM contact_messages ORDER BY id DESC LIMIT ? OFFSET ?";
+    String sqlCount = "SELECT COUNT(*) FROM contact_messages";
+    List<ContactMessage> rows = jdbcTemplate.query(
+        sqlList,
+        new Object[]{ size, offset },
+        (rs, rn) -> new ContactMessage(rs.getLong("id"), rs.getString("name"),
+                rs.getString("email"), rs.getString("message"), rs.getString("status"))
+    );
+    int total = jdbcTemplate.queryForObject(sqlCount, Integer.class);
+    return new PagedResult<>(rows, page, size, total);
+}
+```
+
+### ❓ Interview Questions
+
+1. **Q**: How do you avoid SQL injection in pagination?
+   **A**: By using parameterized queries (`?`) instead of string concatenation for `LIMIT` and `OFFSET`.
+
+2. **Q**: Why run a separate count query?
+   **A**: To provide total record count for pagination metadata (total pages, navigational info).
+
+3. **Q**: What model structure do you use for paged results?
+   **A**: A `PagedResult<T>` class containing `List<T> items`, `int page`, `int size`, `int totalItems`, etc.
+
+---
+
+## 3. Update Contact messages status using JdbcTemplate update operation
+
+### ✅ Use Case & Explanation
+
+* ✅ Mark messages as `READ` after support responds.
+* ✅ Use `JdbcTemplate.update(...)` to change status based on `id`.
+* ✅ Return count of affected rows for verification.
+* ✅ Trigger downstream logic (notifications, audit).
+* ✅ Wrap in transaction for atomicity if other DB actions included.
+
+### 📋 Summary (5 lines)
+
+This updates the status of a specific contact message using `JdbcTemplate.update()`. It takes an `id` and the new `status` value. The method returns how many rows were affected—ensuring the update occurred. You may wrap this in a transaction if doing multiple related operations too.
+
+```java
+@Transactional
+public boolean markMessageRead(long id) {
+    String sql = "UPDATE contact_messages SET status = ? WHERE id = ?";
+    int updated = jdbcTemplate.update(sql, "READ", id);
+    return updated == 1;
+}
+```
+
+### ❓ Interview Questions
+
+1. **Q**: What does `jdbcTemplate.update()` return?
+   **A**: The number of rows affected by the update operation.
+
+2. **Q**: Why annotate with `@Transactional`?
+   **A**: To ensure all DB changes succeed or roll back together when part of a larger operation.
+
+3. **Q**: How do you handle stale or missing rows?
+   **A**: Check the return value; if zero, return false or throw an exception indicating the row didn’t exist.
+
+---
+
+## 4. Implementing AOP Web Application
+
+### ✅ Use Case & Explanation
+
+* ✅ Log entry/exit of all controller methods using AOP.
+* ✅ Measure execution time and log warnings if slow.
+* ✅ Apply security checks (e.g., RBAC) via AOP before method execution.
+* ✅ Use `@Around` advice to wrap performance-critical operations.
+* ✅ Handle exceptions uniformly using `@AfterThrowing`.
+
+### 📋 Summary (5 lines)
+
+You can use Spring AOP to separate cross-cutting concerns like logging, security, and performance metrics from business logic. Define an aspect with `@Aspect`, and annotate methods or classes to intercept. Use `@Before`, `@Around`, and `@AfterThrowing` to inject behavior at various join points. This keeps controllers clean and improves maintainability.
+
+```java
+@Aspect @Component
+public class LoggingAspect {
+    @Around("execution(* com.example.app.controller.*.*(..))")
+    public Object logAndTime(ProceedingJoinPoint pjp) throws Throwable {
+        long start = System.currentTimeMillis();
+        try {
+            return pjp.proceed();
+        } finally {
+            long elapsed = System.currentTimeMillis() - start;
+            String method = pjp.getSignature().toShortString();
+            if (elapsed > 1000) logger.warn("{} took {} ms", method, elapsed);
+            else logger.info("{} took {} ms", method, elapsed);
+        }
+    }
+}
+```
+
+### ❓ Interview Questions
+
+1. **Q**: What is AOP and why use it?
+   **A**: Aspect-Oriented Programming modularizes cross-cutting concerns (logging, security) to keep business code clean and reusable.
+
+2. **Q**: What’s the difference between `@Before` and `@Around` advice?
+   **A**: `@Before` runs before join point, cannot alter return or catch exceptions; `@Around` wraps the call, can control execution and handle return/exception.
+
+3. **Q**: How do you ensure AOP gets applied (proxy issues)?
+   **A**: Ensure `@EnableAspectJAutoProxy` is enabled, beans are managed by Spring, and you’re not invoking methods within the same class directly (due to proxy limitations).
+
+---
+
+Let me know if you'd like additional parts or live deployment tips!
 
 
