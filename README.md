@@ -1675,4 +1675,298 @@ class Cfg {
 
 ---
 
-That’s the full set—let me know if you want deeper dive or examples!
+Here’s a structured breakdown of key Spring dependency‑injection techniques, circular‑dependency theory and resolution, interview‑style questions, plus a sample assignment.
+
+---
+
+## 1. Wiring Beans using method‑call (i.e. manual call in configuration)
+
+**Use‑case**: simple JavaConfig with explicit bean creation via calling factory methods.
+
+* You define beans in a `@Configuration` class; one bean method calls another method to obtain a dependency.
+* Spring treats each bean method as a singleton unless otherwise scoped.
+* Enables full control but more verbose than annotation‐driven wiring.
+* Useful when migrating legacy code from XML.
+* Dependency is explicit and static.
+
+**Summary**: JavaConfig method‑call wiring lets one `@Bean` method invoke another to inject dependencies, providing explicit wiring without annotations. It’s verbose but clear.
+**Code**:
+
+```java
+@Configuration
+public class AppConfig {
+  @Bean
+  public ServiceA serviceA() {
+    return new ServiceA(serviceB());
+  }
+  @Bean
+  public ServiceB serviceB() {
+    return new ServiceB();
+  }
+}
+```
+
+**Interview Q\&A**
+
+1. **Q**: What happens if you call `serviceB()` twice in config?
+   **A**: Spring returns same singleton instance (CGLIB proxies bean methods), so no duplication.
+2. **Q**: When would you use method‑call wiring?
+   **A**: In legacy migration, explicit wiring, or for beans where annotation scanning isn’t feasible.
+3. **Q**: Is order of methods relevant?
+   **A**: Not strictly—Spring resolves dependencies and creates target beans before calling.
+
+---
+
+## 2. Wiring Beans using method‑parameters (JavaConfig)
+
+**Use‑case**: cleaner JavaConfig where Spring injects parameters rather than manual calls.
+
+* In `@Configuration`, define a `@Bean` method with parameters of other beans.
+* Spring resolves parameters by type and invokes methods in correct order.
+* Cleaner than method‑call wiring.
+* Maintains singleton scope.
+* Dependencies easily testable.
+
+**Summary**: Method‑parameter wiring uses JavaConfig bean method parameters to inject dependencies automatically; it’s clean and declarative.
+**Code**:
+
+```java
+@Configuration
+public class AppConfig {
+  @Bean ServiceB serviceB() { return new ServiceB(); }
+  @Bean ServiceA serviceA(ServiceB b) { return new ServiceA(b); }
+}
+```
+
+**Interview Q\&A**
+
+1. **Q**: Is parameter naming important?
+   **A**: Spring matches by type; names matter only if ambiguity exists.
+2. **Q**: How does this differ from constructor injection in components?
+   **A**: It’s at config time; components still need annotations.
+3. **Q**: Can you inject prototype scoped beans via method‑parameters?
+   **A**: Yes, but method method returns are singleton; use lookup otherwise.
+
+---
+
+## 3. Wiring Beans using @Autowired on class fields
+
+**Use‑case**: quick injection without constructor or setter boilerplate.
+
+* Annotate private fields with `@Autowired`.
+* Spring uses reflection to inject dependencies.
+* Simplest syntax but hides dependencies.
+* Makes unit testing and immutability harder ([Java Tech Blog][1], [CodingEasyPeasy][2], [Reddit][3]).
+* Can help resolve circular dependencies if other styles fail ([CodingEasyPeasy][2]).
+
+**Summary**: Field injection is terse but conceals class dependencies, harms testability, and is generally discouraged in favor of constructor-based injection.
+**Code**:
+
+```java
+@Component
+public class Car {
+  @Autowired private Engine engine;
+  public void drive() { engine.start(); }
+}
+```
+
+**Interview Q\&A**
+
+1. **Q**: Why is field injection discouraged?
+   **A**: Dependencies aren’t explicit; hard to test; breaks immutability ([Reddit][4]).
+2. **Q**: Can you inject optional dependencies via field injection?
+   **A**: Yes via `@Autowired(required=false)` but requires null checks.
+3. **Q**: Does Spring use setter injection if no setter exists?
+   **A**: For field injection Spring still injects by reflection; setter injection not used.
+
+---
+
+## 4. Wiring Beans using @Autowired on setter method
+
+**Use‑case**: optional or mutable dependencies, or those requiring post‑initialization handling.
+
+* Use setter methods with `@Autowired`.
+* Spring calls constructor first, then injects dependencies via setter.
+* Allows null-checks and dynamic changes at runtime.
+* Often used to break circular dependencies ([Baeldung][5], [GeeksforGeeks][6]).
+* Slightly less recommended than constructor injection for mandatory dependencies.
+
+**Summary**: Setter injection places dependencies after bean instantiation, allowing mutability and optional wiring; it's useful for circular dependency resolution.
+**Code**:
+
+```java
+@Component
+public class ServiceA {
+  private ServiceB b;
+  @Autowired
+  public void setServiceB(ServiceB b) { this.b = b; }
+  public void doA() { b.doB(); }
+}
+```
+
+**Interview Q\&A**
+
+1. **Q**: When would setter injection be preferable to constructor injection?
+   **A**: For optional dependencies, or to break circular dependencies.
+2. **Q**: What is a downside?
+   **A**: Bean is mutable; possible null-pointer use if setter not called.
+3. **Q**: How does Spring detect setter injection?
+   **A**: The presence of `@Autowired` on a setter informs Spring to inject.
+
+---
+
+\## 5. Wiring Beans using @Autowired on constructor
+**Use‑case**: recommended style for mandatory dependencies, immutability, and clarity.
+
+* Annotate constructor (or omit if single constructor since Spring 4.3).
+* Dependencies are final, explicit, and required.
+* Supports testability and immutability.
+* Prevents circular dependencies at compile-time.
+* Preferred by Spring docs and community ([Reddit][7], [Reddit][3], [Reddit][8]).
+
+**Summary**: Constructor injection is the preferred Spring wiring method: explicit, immutable, testable, and safe from runtime surprises.
+**Code**:
+
+```java
+@Component
+public class Engine { /*...*/ }
+@Component
+public class Car {
+  private final Engine engine;
+  @Autowired
+  public Car(Engine engine) { this.engine = engine; }
+  public void drive() { engine.start(); }
+}
+```
+
+**Interview Q\&A**
+
+1. **Q**: Do you need `@Autowired` if only one constructor is defined?
+   **A**: No—Spring auto-wires a single constructor since 4.3 .
+2. **Q**: Can constructor injection contribute to circular dependency?
+   **A**: Yes—it makes cycles impossible at runtime, triggering immediate error.
+3. **Q**: How does constructor injection aid unit testing?
+   **A**: You can instantiate class directly with mocks without Spring.
+
+---
+
+## 6. Deep dive of Autowiring inside Spring – Theory
+
+* Autowiring resolves bean dependencies by type (default), possibly by name.
+* Modes include `no`, `byName`, `byType`, `constructor` in XML.
+* Annotation-based: `@Autowired` supports by type; ambiguous beans need `@Primary` or `@Qualifier` ([Java Tech Blog][1], [Home][9], [Home][10]).
+* Simple scalar properties are not autowirable.
+* Constructor > setter > field in priority and practice.
+* Autowiring is overridden by explicit configuration.
+
+**Summary**: Spring autowiring simplifies bean resolution by type/name but has pitfalls such as ambiguity, hidden dependencies, and limitations on simple types. Use qualifiers or explicit wiring when needed.
+**Code**: N/A (theoretical).
+
+**Interview Q\&A**
+
+1. **Q**: Why can’t you autowire `String` properties?
+   **A**: Spring doesn't resolve simple/primitive or String types via autowiring.
+2. **Q**: How do you resolve multiple candidates?
+   **A**: Use `@Qualifier` or mark one bean `@Primary`.
+3. **Q**: Does XML autowiring support field injection?
+   **A**: No—XML supports only constructor or setter.
+
+---
+
+## 7. Deep dive of Autowiring inside Spring – Coding example
+
+**Use‑case**: demonstrating field/setter/constructor with qualifiers and how Spring picks.
+
+* Define two beans implementing same interface.
+* Autowire by type → ambiguity → qualifier.
+* Show constructor vs setter vs field.
+
+**Summary**: Example demonstrates autowiring behavior, ambiguity resolution via `@Qualifier` or `@Primary`, and differences in injection methods.
+
+**Code**:
+
+```java
+@Component interface Engine {}
+@Component @Primary class V8Engine implements Engine {}
+@Component @Qualifier("v6") class V6Engine implements Engine {}
+@Component class Car {
+  private final Engine engine;
+  @Autowired
+  public Car(Engine engine) { this.engine = engine; }
+}
+```
+
+---
+
+## 8. Understanding and Avoiding Circular dependencies
+
+**Theory & practice**:
+
+* Circular dependency occurs when A depends on B and B depends back on A—Spring throws `BeanCurrentlyInCreationException` for constructors ([Java Code Geeks][11], [Home][10], [Reddit][12], [smartprogramming.in][13], [GeeksforGeeks][6]).
+* Setter or field injection can sometimes resolve cycles .
+* Use `@Lazy` to defer creation and break the cycle ([Baeldung][5]).
+* Better: redesign to remove the cycle via interfaces or service refactoring.
+* Other tools: `@PostConstruct`, `ApplicationContextAware` to wire manually ([Baeldung][5]).
+
+**Summary**: Spring circular dependencies must be avoided. Constructor injection fails; setter/field injection or `@Lazy` can break the cycle. Best solution: refactor design.
+
+**Code**:
+
+```java
+@Component class A {
+  private B b;
+  @Autowired public void setB(@Lazy B b) { this.b = b; }
+}
+@Component class B {
+  private A a;
+  @Autowired public void setA(@Lazy A a) { this.a = a; }
+}
+```
+
+---
+
+## 9. Problem Statement for Assignment
+
+**Problem**: Create a small Spring Boot app with three services (`ServiceX`, `ServiceY`, `ServiceZ`) where `ServiceX` depends on `Y` and `Z`, `Y` depends on `Z`, and `Z` on `X`. Demonstrate detection and resolution of circular dependencies using different wiring styles, qualifiers, bean scopes, and lazy injection.
+
+---
+
+## 10. Solution for Assignment
+
+**Outline**:
+
+* Show failure with constructor injection causing `BeanCurrentlyInCreationException`.
+* Resolve using setter injection + `@Lazy` on one dependency.
+* Use `@Qualifier` if multiple bean candidates.
+* Demonstrate prototype bean injected into singleton via `@Lookup`.
+* Provide unit tests.
+
+---
+
+## 11. “Wiring Beans using @Autowiring” Quiz
+
+1. Which type of injection makes dependencies immutable?
+
+   * A: Constructor injection
+2. How to resolve ambiguity with two beans of same type?
+
+   * A: `@Qualifier` or `@Primary`
+3. Can you autowire String property?
+
+   * A: No
+
+---
+
+## 12. Beans scope inside Spring framework
+
+* **Singleton**: Default; one instance per Spring context.
+* **Prototype**: New instance each time requested.
+* **Request**, **Session**, **Application**, **Websocket**: web-aware scopes.
+* Injector into singleton from prototype leads to single prototype reused unless you use `@Lookup` or ObjectFactory/Provider.
+* Use prototype for stateful, singleton for stateless services ([Baeldung][5], [Java Tech Blog][1], [Reddit][7], [Reddit][14]).
+
+---
+
+Let me know if you’d like full implementation files or a deeper dive on any topic!
+
+
