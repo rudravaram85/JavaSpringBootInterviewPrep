@@ -11096,6 +11096,379 @@ public class OrderService {
 If you want, I can help you generate full entity classes with annotations and repositories or write a native query version, just let me know! Want me to help set up the full Spring Boot project structure for this?
 
 
+Great! I'll give you a **full Spring Boot project structure** with the **entities**, **repository**, **service**, and a simple **REST controller** that exposes this 10-table join query as an API endpoint.
+
+---
+
+# Full Spring Boot Project Structure for 10-table Join Query
+
+---
+
+## 1. Project Structure
+
+```
+src/main/java/com/example/ecommerce/
+│
+├── controller/
+│     └── OrderController.java
+├── dto/
+│     └── OrderReportDTO.java
+├── entity/
+│     ├── Address.java
+│     ├── Category.java
+│     ├── Discount.java
+│     ├── Invoice.java
+│     ├── Order.java
+│     ├── Payment.java
+│     ├── Product.java
+│     ├── Review.java
+│     ├── Shipment.java
+│     └── User.java
+├── repository/
+│     └── OrderRepository.java
+├── service/
+│     └── OrderService.java
+└── EcommerceApplication.java
+```
+
+---
+
+## 2. The code files
+
+---
+
+### 2.1 `EcommerceApplication.java`
+
+```java
+package com.example.ecommerce;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class EcommerceApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(EcommerceApplication.class, args);
+    }
+}
+```
+
+---
+
+### 2.2 Entities (Example: `User.java`)
+
+```java
+package com.example.ecommerce.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "users")
+public class User {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @OneToOne
+    @JoinColumn(name = "address_id")
+    private Address address;
+
+    // getters and setters
+}
+```
+
+Similarly for other entities, here’s a condensed version:
+
+---
+
+### 2.3 Other Entities (example snippets)
+
+```java
+@Entity
+@Table(name = "addresses")
+public class Address {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String city;
+    private String country;
+    // getters/setters
+}
+
+@Entity
+@Table(name = "categories")
+public class Category {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+    // getters/setters
+}
+
+@Entity
+@Table(name = "products")
+public class Product {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
+    // getters/setters
+}
+
+@Entity
+@Table(name = "orders")
+public class Order {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "product_id")
+    private Product product;
+    // getters/setters
+}
+
+@Entity
+@Table(name = "payments")
+public class Payment {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private Double amount;
+
+    @OneToOne
+    @JoinColumn(name = "order_id")
+    private Order order;
+    // getters/setters
+}
+
+@Entity
+@Table(name = "shipments")
+public class Shipment {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String status;
+
+    @OneToOne
+    @JoinColumn(name = "order_id")
+    private Order order;
+    // getters/setters
+}
+
+@Entity
+@Table(name = "invoices")
+public class Invoice {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String number;
+
+    @OneToOne
+    @JoinColumn(name = "order_id")
+    private Order order;
+    // getters/setters
+}
+
+@Entity
+@Table(name = "discounts")
+public class Discount {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private Double value;
+
+    @ManyToOne
+    @JoinColumn(name = "product_id")
+    private Product product;
+    // getters/setters
+}
+
+@Entity
+@Table(name = "reviews")
+public class Review {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String comment;
+
+    @ManyToOne
+    @JoinColumn(name = "product_id")
+    private Product product;
+    // getters/setters
+}
+```
+
+---
+
+### 2.4 DTO — `OrderReportDTO.java`
+
+```java
+package com.example.ecommerce.dto;
+
+public class OrderReportDTO {
+    private String userName;
+    private String productName;
+    private String categoryName;
+    private String city;
+    private String country;
+    private Double paymentAmount;
+    private String shipmentStatus;
+    private String invoiceNumber;
+    private Double discountValue;
+    private String reviewComment;
+
+    public OrderReportDTO(String userName, String productName, String categoryName,
+                          String city, String country, Double paymentAmount,
+                          String shipmentStatus, String invoiceNumber,
+                          Double discountValue, String reviewComment) {
+        this.userName = userName;
+        this.productName = productName;
+        this.categoryName = categoryName;
+        this.city = city;
+        this.country = country;
+        this.paymentAmount = paymentAmount;
+        this.shipmentStatus = shipmentStatus;
+        this.invoiceNumber = invoiceNumber;
+        this.discountValue = discountValue;
+        this.reviewComment = reviewComment;
+    }
+
+    // Getters and setters omitted for brevity
+}
+```
+
+---
+
+### 2.5 Repository — `OrderRepository.java`
+
+```java
+package com.example.ecommerce.repository;
+
+import com.example.ecommerce.dto.OrderReportDTO;
+import com.example.ecommerce.entity.Order;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface OrderRepository extends JpaRepository<Order, Long> {
+
+    @Query("""
+        SELECT new com.example.ecommerce.dto.OrderReportDTO(
+            o.user.name,
+            o.product.name,
+            o.product.category.name,
+            o.user.address.city,
+            o.user.address.country,
+            pay.amount,
+            ship.status,
+            inv.number,
+            disc.value,
+            rev.comment
+        )
+        FROM Order o
+        LEFT JOIN Payment pay ON pay.order = o
+        LEFT JOIN Shipment ship ON ship.order = o
+        LEFT JOIN Invoice inv ON inv.order = o
+        LEFT JOIN Discount disc ON disc.product = o.product
+        LEFT JOIN Review rev ON rev.product = o.product
+        """)
+    List<OrderReportDTO> fetchOrderReport();
+}
+```
+
+---
+
+### 2.6 Service — `OrderService.java`
+
+```java
+package com.example.ecommerce.service;
+
+import com.example.ecommerce.dto.OrderReportDTO;
+import com.example.ecommerce.repository.OrderRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class OrderService {
+    private final OrderRepository orderRepository;
+
+    public OrderService(OrderRepository orderRepository) {
+        this.orderRepository = orderRepository;
+    }
+
+    public List<OrderReportDTO> getOrderReport() {
+        return orderRepository.fetchOrderReport();
+    }
+}
+```
+
+---
+
+### 2.7 Controller — `OrderController.java`
+
+```java
+package com.example.ecommerce.controller;
+
+import com.example.ecommerce.dto.OrderReportDTO;
+import com.example.ecommerce.service.OrderService;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+public class OrderController {
+    private final OrderService orderService;
+
+    public OrderController(OrderService orderService) {
+        this.orderService = orderService;
+    }
+
+    @GetMapping("/api/orders/report")
+    public List<OrderReportDTO> getOrderReport() {
+        return orderService.getOrderReport();
+    }
+}
+```
+
+---
+
+## 3. Application.properties (Example for H2 in-memory DB)
+
+```properties
+spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.h2.console.enabled=true
+```
+
+---
+
+## 4. How to run and test?
+
+* Run the Spring Boot app (`EcommerceApplication`).
+* Seed the database manually or via SQL scripts (not included here, but you can add some test data).
+* Open your browser or Postman and hit:
+  `http://localhost:8080/api/orders/report`
+* You will get a JSON list of `OrderReportDTO` objects combining data from 10 tables!
+
+---
+
+If you want, I can also help you write sample data loaders or show you how to seed the DB with test data.
+
+---
+
+How does this look? Want me to generate seed data or a step-by-step to add tests?
 
 
 
