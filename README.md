@@ -10879,9 +10879,221 @@ A: Be careful—a snapshot is taken unless you disable it before deleting.
 
 ---
 
-That wraps up the full suite of topics with code samples, summaries, and Q\&As! Let me know if you'd like to expand any section.
+Awesome! Let’s build a realistic example with **10 tables** using JPA entities in Spring Boot for an **e-commerce** domain, covering the tables I mentioned before.
 
+---
 
+# Example: E-commerce Multi-table Query with 10 Entities and JPQL
+
+### Entities (simplified for clarity)
+
+```java
+@Entity
+public class User {
+    @Id @GeneratedValue
+    private Long id;
+    private String name;
+    @OneToOne
+    private Address address;
+    // getters/setters
+}
+
+@Entity
+public class Address {
+    @Id @GeneratedValue
+    private Long id;
+    private String city;
+    private String country;
+    // getters/setters
+}
+
+@Entity
+public class Product {
+    @Id @GeneratedValue
+    private Long id;
+    private String name;
+    @ManyToOne
+    private Category category;
+    // getters/setters
+}
+
+@Entity
+public class Category {
+    @Id @GeneratedValue
+    private Long id;
+    private String name;
+    // getters/setters
+}
+
+@Entity
+public class Order {
+    @Id @GeneratedValue
+    private Long id;
+    @ManyToOne
+    private User user;
+    @ManyToOne
+    private Product product;
+    // getters/setters
+}
+
+@Entity
+public class Payment {
+    @Id @GeneratedValue
+    private Long id;
+    private Double amount;
+    @OneToOne
+    private Order order;
+    // getters/setters
+}
+
+@Entity
+public class Shipment {
+    @Id @GeneratedValue
+    private Long id;
+    private String status;
+    @OneToOne
+    private Order order;
+    // getters/setters
+}
+
+@Entity
+public class Invoice {
+    @Id @GeneratedValue
+    private Long id;
+    private String number;
+    @OneToOne
+    private Order order;
+    // getters/setters
+}
+
+@Entity
+public class Discount {
+    @Id @GeneratedValue
+    private Long id;
+    private Double value;
+    @ManyToOne
+    private Product product;
+    // getters/setters
+}
+
+@Entity
+public class Review {
+    @Id @GeneratedValue
+    private Long id;
+    private String comment;
+    @ManyToOne
+    private Product product;
+    // getters/setters
+}
+```
+
+---
+
+# Step 1: DTO Class to Hold the Result
+
+```java
+public class OrderReportDTO {
+    private String userName;
+    private String productName;
+    private String categoryName;
+    private String city;
+    private String country;
+    private Double paymentAmount;
+    private String shipmentStatus;
+    private String invoiceNumber;
+    private Double discountValue;
+    private String reviewComment;
+
+    public OrderReportDTO(String userName, String productName, String categoryName,
+                          String city, String country, Double paymentAmount,
+                          String shipmentStatus, String invoiceNumber,
+                          Double discountValue, String reviewComment) {
+        this.userName = userName;
+        this.productName = productName;
+        this.categoryName = categoryName;
+        this.city = city;
+        this.country = country;
+        this.paymentAmount = paymentAmount;
+        this.shipmentStatus = shipmentStatus;
+        this.invoiceNumber = invoiceNumber;
+        this.discountValue = discountValue;
+        this.reviewComment = reviewComment;
+    }
+
+    // getters and setters omitted for brevity
+}
+```
+
+---
+
+# Step 2: Repository with JPQL Query
+
+```java
+public interface OrderRepository extends JpaRepository<Order, Long> {
+
+    @Query("""
+        SELECT new com.example.dto.OrderReportDTO(
+            o.user.name,
+            o.product.name,
+            o.product.category.name,
+            o.user.address.city,
+            o.user.address.country,
+            pay.amount,
+            ship.status,
+            inv.number,
+            disc.value,
+            rev.comment
+        )
+        FROM Order o
+        LEFT JOIN Payment pay ON pay.order = o
+        LEFT JOIN Shipment ship ON ship.order = o
+        LEFT JOIN Invoice inv ON inv.order = o
+        LEFT JOIN Discount disc ON disc.product = o.product
+        LEFT JOIN Review rev ON rev.product = o.product
+        """)
+    List<OrderReportDTO> fetchOrderReport();
+}
+```
+
+---
+
+# Explanation:
+
+* We use **JPQL constructor expression**: `new com.example.dto.OrderReportDTO(...)`
+* We join 10 tables via JPA relationships.
+* Using `LEFT JOIN` ensures we get data even if some related entities are missing.
+* This query returns a list of DTOs — efficient and clean.
+
+---
+
+# Step 3: Using the Repository in a Service
+
+```java
+@Service
+public class OrderService {
+    private final OrderRepository orderRepository;
+
+    public OrderService(OrderRepository orderRepository) {
+        this.orderRepository = orderRepository;
+    }
+
+    public List<OrderReportDTO> getOrderReport() {
+        return orderRepository.fetchOrderReport();
+    }
+}
+```
+
+---
+
+# Final notes:
+
+* This example assumes your entity relationships are properly set up.
+* Lazy loading vs eager loading can impact performance here; JPQL with DTO projection avoids N+1 problem.
+* For real projects, add error handling and pagination if needed.
+
+---
+
+If you want, I can help you generate full entity classes with annotations and repositories or write a native query version, just let me know! Want me to help set up the full Spring Boot project structure for this?
 
 
 
